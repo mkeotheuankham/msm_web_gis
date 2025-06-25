@@ -1,0 +1,12 @@
+/* Tailwind CSS directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for the app, if any */
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif; /* Ensuring Inter font is used */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

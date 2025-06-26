@@ -3,6 +3,7 @@ import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
+import XYZ from "ol/source/XYZ";
 import { fromLonLat, toLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -12,41 +13,68 @@ import Fill from "ol/style/Fill";
 import Stroke from "ol/style/Stroke";
 import CircleStyle from "ol/style/Circle";
 import { defaults as defaultControls } from "ol/control";
-import "ol/ol.css"; // Import OpenLayers CSS
+import "ol/ol.css";
 
-// Your components (now imported from the same folder)
-import ProvinceControls from "./ProvinceControls"; // Corrected import path
-import DrawingToolbar from "./DrawingToolbar"; // Corrected import path
-import { PanelLeft, PanelRight } from "lucide-react"; // Import icons for Toggle Sidebar button
+import ProvinceControls from "./ProvinceControls";
+import DrawingToolbar from "./DrawingToolbar";
+import BaseMapSwitcher from "./map/BaseMapSwitcher";
+import { PanelLeft, PanelRight } from "lucide-react";
 
 function MapComponent() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const vectorSourceRef = useRef(new VectorSource());
   const drawInteractionRef = useRef(null);
-  const draggableToolbarRef = useRef(null);
+  const draggableToolbarRef = useRef(null); // Ref for the draggable toolbar
 
-  // Define initial center and zoom
-  // This is the internal state for MapComponent to display current values
   const [centerState, setCenterState] = useState([102.6, 17.96]);
   const [zoomState, setZoomState] = useState(8);
+  // This state indicates if the OpenLayers map instance is fully loaded and ready
   const [openLayersLoadedState, setOpenLayersLoadedState] = useState(false);
 
-  // Set initial value to true to collapse Sidebar on first load
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
 
   const [drawType, setDrawType] = useState("None");
   // Initial toolbar position. Use numeric values for precise placement
   const [toolbarPosition, setToolbarPosition] = useState({ x: 20, y: 150 });
-  const [isDragging, setIsDragging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false); // State to check if currently dragging
+
   const [drawnFeatures, setDrawnFeatures] = useState([]);
 
-  // --- LOGGING FOR DEBUGGING ---
+  const baseMapLayers = [
+    {
+      name: "OpenStreetMap",
+      url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      source: "OSM",
+    },
+    {
+      name: "Stadia Satellite",
+      url: "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}.jpg",
+      attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>',
+      source: "XYZ",
+    },
+    {
+      name: "OSM Breton",
+      url: "https://tile.openstreetmap.bzh/ca/{z}/{x}/{y}.png",
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles courtesy of <a href="https://www.openstreetmap.cat" target="_blank">Breton OpenStreetMap Team</a>',
+      source: "XYZ",
+    },
+    {
+      name: "Esri World Imagery",
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      attribution: "Tiles &copy; Esri",
+      source: "XYZ",
+    },
+  ];
+
+  const [activeBaseMap, setActiveBaseMap] = useState(baseMapLayers[0].name);
+
   console.log("MapComponent render - centerState:", centerState);
   console.log("MapComponent render - zoomState:", zoomState);
-  // --- END LOGGING ---
 
-  // Ref for VectorLayer to persist it between re-renders
   const vectorLayerRef = useRef(
     new VectorLayer({
       source: vectorSourceRef.current,
@@ -55,7 +83,7 @@ function MapComponent() {
           color: "rgba(255, 255, 255, 0.2)",
         }),
         stroke: new Stroke({
-          color: "#ffcc33", // Color for completed drawings
+          color: "#ffcc33",
           width: 2,
         }),
         image: new CircleStyle({
@@ -68,13 +96,12 @@ function MapComponent() {
     })
   );
 
-  // Style for the drawing being created (Interaction Style)
   const interactionDrawingStyle = new Style({
     fill: new Fill({
-      color: "rgba(0, 255, 255, 0.2)", // Transparent blue
+      color: "rgba(0, 255, 255, 0.2)",
     }),
     stroke: new Stroke({
-      color: "#00FFFF", // Blue
+      color: "#00FFFF",
       width: 2,
     }),
     image: new CircleStyle({
@@ -85,48 +112,69 @@ function MapComponent() {
     }),
   });
 
-  // Callback for clearing drawings
   const handleClearDrawings = useCallback(() => {
-    vectorSourceRef.current.clear(); // Clear all features from VectorSource
-    setDrawnFeatures([]); // Clear state of drawn features
-    setDrawType("None"); // Stop drawing mode after clearing
+    vectorSourceRef.current.clear();
+    setDrawnFeatures([]);
+    setDrawType("None");
   }, []);
 
-  // Effect for map initialization and adding drawing layer
+  // Effect for map initialization (runs once on mount)
   useEffect(() => {
-    // If mapRef is not connected or mapInstance is already created, do nothing
     if (!mapRef.current || mapInstanceRef.current) return;
 
     const initialView = new View({
-      center: fromLonLat(centerState), // Use defined centerState
-      zoom: zoomState, // Use defined zoomState
-      minZoom: 2, // Min zoom level
-      maxZoom: 18, // Max zoom level
+      center: fromLonLat(centerState),
+      zoom: zoomState,
+      minZoom: 2,
+      maxZoom: 18,
     });
 
     const map = new Map({
       target: mapRef.current,
-      layers: [
-        new TileLayer({
-          source: new OSM(),
-        }),
-        vectorLayerRef.current, // Add VectorLayer for drawing
-      ],
       view: initialView,
-      controls: defaultControls().extend([]), // Remove unwanted controls
+      controls: defaultControls().extend([]),
     });
+
+    // Add vector layer (always present for drawings)
+    map.addLayer(vectorLayerRef.current);
+
+    // --- Add the INITIAL base map layer here during map setup ---
+    const initialBaseMapDef = baseMapLayers.find(
+      (layer) => layer.name === activeBaseMap
+    );
+
+    if (initialBaseMapDef) {
+      let initialBaseLayer;
+      if (initialBaseMapDef.source === "OSM") {
+        initialBaseLayer = new TileLayer({
+          source: new OSM({
+            attributions: initialBaseMapDef.attribution,
+          }),
+          properties: { isBaseLayer: true }, // Mark as base layer
+        });
+      } else if (initialBaseMapDef.source === "XYZ") {
+        initialBaseLayer = new TileLayer({
+          source: new XYZ({
+            url: initialBaseMapDef.url,
+            attributions: initialBaseMapDef.attribution,
+          }),
+          properties: { isBaseLayer: true }, // Mark as base layer
+        });
+      }
+      if (initialBaseLayer) {
+        // Add the initial base layer at the bottom (index 0) of the layer stack
+        map.getLayers().insertAt(0, initialBaseLayer);
+      }
+    }
+    // --- END INITIAL base map setup ---
 
     mapInstanceRef.current = map; // Store map instance in ref
 
-    // Listen for map view changes and update state
     const handleMoveEnd = () => {
       const newCenter = toLonLat(map.getView().getCenter());
       const newZoom = map.getView().getZoom();
-      // --- LOGGING FOR DEBUGGING ---
       console.log("Map 'moveend' event - newCenter:", newCenter);
       console.log("Map 'moveend' event - newZoom:", newZoom);
-      // --- END LOGGING ---
-      // Update centerState and zoomState within MapComponent
       setCenterState([
         parseFloat(newCenter[0].toFixed(2)),
         parseFloat(newCenter[1].toFixed(2)),
@@ -136,27 +184,72 @@ function MapComponent() {
 
     map.on("moveend", handleMoveEnd);
 
-    setOpenLayersLoadedState(true); // Indicate OpenLayers is loaded
+    // Set OpenLayers loaded state AFTER map instance is ready
+    setOpenLayersLoadedState(true);
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.un("moveend", handleMoveEnd); // Remove event listener
+        mapInstanceRef.current.un("moveend", handleMoveEnd);
         mapInstanceRef.current.setTarget(undefined);
         mapInstanceRef.current = null;
       }
     };
-  }, []); // This runs only once after component mounts
+  }, []); // Empty dependency array: runs only once on mount
+
+  // Effect to manage base map layers when activeBaseMap changes
+  // This effect will now only run *after* the initial map setup is complete
+  useEffect(() => {
+    // Only proceed if the map is initialized and OpenLayers is loaded
+    if (!mapInstanceRef.current || !openLayersLoadedState) return;
+
+    // Remove all existing base layers marked as 'isBaseLayer'
+    const layersToRemove = [];
+    mapInstanceRef.current.getLayers().forEach((layer) => {
+      if (layer.get("isBaseLayer")) {
+        layersToRemove.push(layer);
+      }
+    });
+    layersToRemove.forEach((layer) =>
+      mapInstanceRef.current.removeLayer(layer)
+    );
+
+    // Find the currently active base map definition
+    const currentBaseMapDef = baseMapLayers.find(
+      (layer) => layer.name === activeBaseMap
+    );
+
+    if (currentBaseMapDef) {
+      let newBaseLayer;
+      if (currentBaseMapDef.source === "OSM") {
+        newBaseLayer = new TileLayer({
+          source: new OSM({
+            attributions: currentBaseMapDef.attribution,
+          }),
+          properties: { isBaseLayer: true },
+        });
+      } else if (currentBaseMapDef.source === "XYZ") {
+        newBaseLayer = new TileLayer({
+          source: new XYZ({
+            url: currentBaseMapDef.url,
+            attributions: currentBaseMapDef.attribution,
+          }),
+          properties: { isBaseLayer: true },
+        });
+      }
+      if (newBaseLayer) {
+        // Add the new base layer at the bottom (index 0) of the layer stack
+        mapInstanceRef.current.getLayers().insertAt(0, newBaseLayer);
+      }
+    }
+  }, [activeBaseMap, openLayersLoadedState]); // Depends on both to ensure correct timing
 
   // useEffect to update View when centerState or zoomState changes (e.g., from ProvinceControls)
   useEffect(() => {
     if (mapInstanceRef.current) {
       const view = mapInstanceRef.current.getView();
-      // --- LOGGING FOR DEBUGGING ---
       console.log(
         "useEffect [centerState, zoomState] triggered. Updating view."
       );
-      // --- END LOGGING ---
-      // Check centerState before use
       if (centerState && centerState.length === 2) {
         view.setCenter(fromLonLat(centerState));
       } else {
@@ -166,13 +259,12 @@ function MapComponent() {
       }
       view.setZoom(zoomState);
     }
-  }, [centerState, zoomState]); // Listen for changes to centerState and zoomState
+  }, [centerState, zoomState]);
 
   // useEffect for handling draw interaction
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
-    // Remove old interaction if it exists
     if (drawInteractionRef.current) {
       mapInstanceRef.current.removeInteraction(drawInteractionRef.current);
     }
@@ -181,30 +273,29 @@ function MapComponent() {
       const draw = new Draw({
         source: vectorSourceRef.current,
         type: drawType,
-        style: interactionDrawingStyle, // Use style for drawing interaction
+        style: interactionDrawingStyle,
       });
       mapInstanceRef.current.addInteraction(draw);
       drawInteractionRef.current = draw;
 
       draw.on("drawend", (event) => {
-        // Add drawn feature to state
         setDrawnFeatures((prevFeatures) => [...prevFeatures, event.feature]);
       });
     }
 
-    // Cleanup function to remove interaction when component unmounts or drawType changes
     return () => {
       if (drawInteractionRef.current) {
         mapInstanceRef.current.removeInteraction(drawInteractionRef.current);
-        drawInteractionRef.current = null; // Clear ref after removing interaction
+        drawInteractionRef.current = null;
       }
     };
-  }, [drawType]); // Re-run when drawType changes
+  }, [drawType]);
 
   // Functions for draggable toolbar
+  // handleMouseDown, handleMouseMove, handleMouseUp are the parts that handle dragging
   const handleMouseDown = useCallback(
     (e) => {
-      // Prevent text selection during drag
+      // Prevent text selection while dragging
       e.preventDefault();
       setIsDragging(true);
 
@@ -215,7 +306,7 @@ function MapComponent() {
 
       const handleMouseMove = (event) => {
         if (isDragging) {
-          // Use event's clientX/Y to calculate position
+          // Use event's clientX/Y to calculate the new position of the toolbar
           setToolbarPosition({
             x: event.clientX - offsetX,
             y: event.clientY - offsetY,
@@ -246,11 +337,14 @@ function MapComponent() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>MSM Web GIS</h1>
-        <p>ລະບົບຂໍ້ມູນພູມສາດສຳລັບການຕິດຕາມ ແລະ ປະເມີນຜົນ</p>
+        <div className="header-title-block">
+          <h1>MSM Web GIS</h1>
+          <p>ລະບົບຂໍ້ມູນພູມສາດສຳລັບການຕິດຕາມ ແລະ ປະເມີນຜົນ</p>
+        </div>
+
         <button
           onClick={toggleSidebar}
-          className="sidebar-toggle-button"
+          className="toggle-button sidebar-toggle-button"
           aria-label={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
         >
           {isSidebarCollapsed ? (
@@ -268,24 +362,21 @@ function MapComponent() {
             className="map-container"
             style={{ width: "100%", height: "100%" }}
           ></div>
-          {/* Map info display removed as per user request */}
-          {/* <div className="map-info">
-            {centerState && centerState.length === 2 ? (
-              <>
-                <p>
-                  Center: Lon {centerState[0].toFixed(2)}, Lat {centerState[1].toFixed(2)}
-                </p>
-                <p>Zoom: {zoomState.toFixed(2)}</p>
-              </>
-            ) : (
-              <p>Loading map data...</p>
-            )}
-          </div> */}
+
+          {/* Base Map Switcher component - Positioned on the map */}
+          <BaseMapSwitcher
+            activeBaseMap={activeBaseMap}
+            setActiveBaseMap={setActiveBaseMap}
+            baseMapLayers={baseMapLayers}
+            openLayersLoaded={openLayersLoadedState}
+          />
 
           {/* Draggable Drawing Toolbar, floating on top of map-wrapper */}
           <div
             ref={draggableToolbarRef}
-            className="drawing-tools-floating"
+            className={`drawing-tools-floating ${
+              isDragging ? "dragging" : ""
+            }`} /* Add 'dragging' class */
             style={{
               left: toolbarPosition.x,
               top: toolbarPosition.y,
@@ -294,9 +385,9 @@ function MapComponent() {
                 typeof toolbarPosition.y === "string"
                   ? `translateY(-50%)`
                   : "none",
-              cursor: isDragging ? "grabbing" : "grab",
+              cursor: isDragging ? "grabbing" : "grab", // Change cursor to indicate draggable
             }}
-            onMouseDown={handleMouseDown}
+            onMouseDown={handleMouseDown} // Start dragging on mouse down
           >
             <DrawingToolbar
               onDrawTypeChange={handleDrawTypeChange}
@@ -308,8 +399,8 @@ function MapComponent() {
         <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
           <h2>Map Controls</h2>
           <ProvinceControls
-            setCenter={setCenterState} // Pass setCenterState to ProvinceControls
-            setZoom={setZoomState} // Pass setZoomState to ProvinceControls
+            setCenter={setCenterState}
+            setZoom={setZoomState}
             openLayersLoaded={openLayersLoadedState}
             isSidebarCollapsed={isSidebarCollapsed}
           />

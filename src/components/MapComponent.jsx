@@ -17,7 +17,8 @@ import "ol/ol.css";
 
 import ProvinceControls from "./ProvinceControls";
 import DrawingToolbar from "./DrawingToolbar";
-import BaseMapSwitcher from "./map/BaseMapSwitcher"; // ແກ້ໄຂເສັ້ນທາງນໍາເຂົ້າທີ່ນີ້
+import BaseMapSwitcher from "./map/BaseMapSwitcher";
+import CoordinateBar from "./CoordinateBar"; // ນໍາເຂົ້າ CoordinateBar
 import { PanelLeft, PanelRight } from "lucide-react";
 
 function MapComponent() {
@@ -394,6 +395,10 @@ function MapComponent() {
               onClearDrawings={handleClearDrawings}
             />
           </div>
+          {/* CoordinateBar component - ໃຫ້ map instance ແກ່ມັນ */}
+          {mapInstanceRef.current && (
+            <CoordinateBar map={mapInstanceRef.current} />
+          )}
         </div>
 
         <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>

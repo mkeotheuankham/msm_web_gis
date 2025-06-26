@@ -3,7 +3,7 @@ import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
-import { fromLonLat, toLonLat } from "ol/proj"; // ແກ້ໄຂ: ລຶບ '=' ທີ່ເກີນອອກ
+import { fromLonLat, toLonLat } from "ol/proj"; // ຍັງຄົງນຳໃຊ້ fromLonLat, toLonLat
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Draw from "ol/interaction/Draw";
@@ -11,38 +11,33 @@ import Style from "ol/style/Style";
 import Fill from "ol/style/Fill";
 import Stroke from "ol/style/Stroke";
 import CircleStyle from "ol/style/Circle";
+import { defaults as defaultControls } from "ol/control"; // ນຳເຂົ້າ defaultControls ເພື່ອປັບແຕ່ງ
 
 // Components ຂອງທ່ານ (ດຽວນີ້ຖືກນຳເຂົ້າຈາກໂຟນເດີ components)
 import ProvinceControls from "./components/ProvinceControls";
-// ໃຫ້ແນ່ໃຈວ່າທ່ານໄດ້ສ້າງໄຟລ໌ BaseMapSwitcher.jsx ຢູ່ໃນ src/components/
-// ຖ້າທ່ານຕ້ອງການ BaseMapSwitcher ກັບມາ, ທ່ານຕ້ອງສ້າງໄຟລ໌ນັ້ນດ້ວຍເນື້ອໃນທີ່ຖືກຕ້ອງ.
-// import BaseMapSwitcher from "./components/BaseMapSwitcher";
 import DrawingToolbar from "./components/DrawingToolbar";
-
-// !!! ສໍາຄັນ: ຟັງຊັນ ProvinceControls ໄດ້ຖືກລຶບອອກຈາກບ່ອນນີ້ແລ້ວ.
-// ມັນຄວນຈະຢູ່ໃນ src/components/ProvinceControls.jsx ເທົ່ານັ້ນ.
+import { PanelLeft, PanelRight } from "lucide-react"; // ນຳເຂົ້າໄອຄອນສຳລັບປຸ່ມ Toggle Sidebar
 
 function App() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const vectorSourceRef = useRef(new VectorSource());
   const drawInteractionRef = useRef(null);
-  const draggableToolbarRef = useRef(null); // Ref for the draggable drawing toolbar
+  const draggableToolbarRef = useRef(null);
 
   const [centerState, setCenterState] = useState([102.3, 17.97]);
   const [zoomState, setZoomState] = useState(10);
   const [openLayersLoadedState, setOpenLayersLoadedState] = useState(false);
   const [activeDrawType, setActiveDrawType] = useState("None");
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // ປ່ຽນຄ່າເລີ່ມຕົ້ນເປັນ true ເພື່ອໃຫ້ Sidebar ຖືກຫຍໍ້ໃນຕອນຕົ້ນ
 
-  // State for draggable toolbar position
-  const [toolbarPosition, setToolbarPosition] = useState({ x: 50, y: "50%" }); // Start at 50px from left, 50% from top
+  const [toolbarPosition, setToolbarPosition] = useState({ x: 50, y: "50%" });
   const [isDragging, setIsDragging] = useState(false);
-  const dragOffset = useRef({ x: 0, y: 0 }); // To store the offset from mouse to element top-left
+  const dragOffset = useRef({ x: 0, y: 0 });
 
   // Effect ສໍາລັບການເລີ່ມຕົ້ນ Map ແລະເພີ່ມ Layer ການແຕ້ມ
   useEffect(() => {
     if (mapRef.current) {
-      // ກໍານົດ Style ເລີ່ມຕົ້ນສໍາລັບ Features ທີ່ແຕ້ມ
       const drawStyle = new Style({
         fill: new Fill({
           color: "rgba(255, 255, 255, 0.2)",
@@ -61,32 +56,36 @@ function App() {
 
       const vectorLayer = new VectorLayer({
         source: vectorSourceRef.current,
-        style: drawStyle, // ນໍາໃຊ້ Style ທີ່ກໍານົດໄວ້
-        properties: { name: "drawingLayer" }, // ກໍານົດຊື່ໃຫ້ Layer ເພື່ອໃຫ້ສາມາດອ້າງອີງໄດ້ງ່າຍ
+        style: drawStyle,
+        properties: { name: "drawingLayer" },
       });
 
       const map = new Map({
         target: mapRef.current,
         layers: [
           new TileLayer({
-            // ນີ້ແມ່ນ TileLayer ພື້ນຖານ (OSM) ທີ່ທ່ານມີໃນ App.jsx ເດີມ
             source: new OSM(),
           }),
-          vectorLayer, // ເພີ່ມ VectorLayer ສໍາລັບການແຕ້ມເທິງ Base Map
+          vectorLayer,
         ],
         view: new View({
-          center: fromLonLat(centerState), // ຍັງໃຊ້ fromLonLat
+          center: fromLonLat(centerState),
           zoom: zoomState,
         }),
+        // ລຶບ Attribution Control, Rotate Control (Compass) ແລະ Zoom Control ອອກ
+        controls: defaultControls({
+          attribution: false,
+          rotate: false,
+          zoom: false,
+        }).extend([]),
       });
 
       mapInstanceRef.current = map;
-      setOpenLayersLoadedState(true); // ສະແດງວ່າ OpenLayers Map ຖືກໂຫຼດແລ້ວ
+      setOpenLayersLoadedState(true);
 
-      // Event listener ສໍາລັບການເຄື່ອນຍ້າຍ Map
       map.on("moveend", () => {
         const view = map.getView();
-        const newCenter = toLonLat(view.getCenter()); // ຍັງໃຊ້ toLonLat
+        const newCenter = toLonLat(view.getCenter());
         const newZoom = view.getZoom();
         setCenterState([
           parseFloat(newCenter[0].toFixed(2)),
@@ -95,7 +94,6 @@ function App() {
         setZoomState(parseFloat(newZoom.toFixed(2)));
       });
 
-      // Cleanup function ສໍາລັບ Map instance
       return () => {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.setTarget(undefined);
@@ -104,31 +102,28 @@ function App() {
         }
       };
     }
-  }, []); // Empty dependency array ຫມາຍຄວາມວ່າ effect ນີ້ຈະແລ່ນພຽງຄັ້ງດຽວເມື່ອ Component Mount
+  }, []);
 
   // Effect ສໍາລັບການຈັດການ Draw Interaction
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Remove any existing draw interaction before adding a new one
     if (drawInteractionRef.current) {
       map.removeInteraction(drawInteractionRef.current);
-      drawInteractionRef.current = null; // Clear the ref
+      drawInteractionRef.current = null;
     }
 
-    // Add new draw interaction if a valid draw type is selected
     if (activeDrawType !== "None") {
       const draw = new Draw({
         source: vectorSourceRef.current,
-        type: activeDrawType, // 'Point', 'LineString', 'Polygon', 'Circle'
+        type: activeDrawType,
         style: new Style({
-          // Style for the feature being drawn (while drawing)
           fill: new Fill({
             color: "rgba(255, 255, 255, 0.4)",
           }),
           stroke: new Stroke({
-            color: "#00FFFF", // Cyan color for active drawing
+            color: "#00FFFF",
             width: 2,
           }),
           image: new CircleStyle({
@@ -143,15 +138,14 @@ function App() {
       drawInteractionRef.current = draw;
     }
 
-    // Cleanup function: remove interaction when component unmounts or activeDrawType changes
     return () => {
       if (drawInteractionRef.current) {
         map.removeInteraction(drawInteractionRef.current);
       }
     };
-  }, [activeDrawType]); // Dependency: Re-run this effect when 'activeDrawType' changes
+  }, [activeDrawType]);
 
-  // Effect ສໍາລັບການອັບເດດ Map View (Center/Zoom) ໂດຍອີງໃສ່ການປ່ຽນແປງ State
+  // Effect ສໍາລັບການອັບເດດ View (Center/Zoom)
   useEffect(() => {
     if (mapInstanceRef.current) {
       const view = mapInstanceRef.current.getView();
@@ -161,38 +155,33 @@ function App() {
       const targetCenter = centerState.map((coord) =>
         parseFloat(coord.toFixed(2))
       );
-      // Update center if it has changed
       if (currentCenter.toString() !== targetCenter.toString()) {
-        view.setCenter(fromLonLat(targetCenter)); // Use targetCenter here
+        view.setCenter(fromLonLat(targetCenter));
       }
       if (view.getZoom().toFixed(2) !== zoomState.toFixed(2)) {
         view.setZoom(zoomState);
       }
     }
-  }, [centerState, zoomState]); // Dependencies: Re-run this effect when 'centerState' or 'zoomState' changes
+  }, [centerState, zoomState]);
 
-  // Handler for changing the drawing tool type
   const handleDrawTypeChange = (type) => {
     setActiveDrawType(type);
   };
 
-  // Handler for clearing all drawn features
   const handleClearDrawings = () => {
-    vectorSourceRef.current.clear(); // Clear all features from the vector source
-    setActiveDrawType("None"); // Set drawing mode to 'None' after clearing
+    vectorSourceRef.current.clear();
+    setActiveDrawType("None");
   };
 
   // --- Draggable Toolbar Logic ---
   const handleMouseDown = useCallback((e) => {
     if (draggableToolbarRef.current) {
       const rect = draggableToolbarRef.current.getBoundingClientRect();
-      // Calculate offset from mouse click to the element's top-left corner
       dragOffset.current = {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
       };
       setIsDragging(true);
-      // Prevent text selection during drag
       e.preventDefault();
     }
   }, []);
@@ -201,12 +190,10 @@ function App() {
     (e) => {
       if (!isDragging) return;
 
-      // Calculate new position relative to the map-wrapper
       const mapWrapperRect = mapRef.current.getBoundingClientRect();
       let newX = e.clientX - mapWrapperRect.left - dragOffset.current.x;
       let newY = e.clientY - mapWrapperRect.top - dragOffset.current.y;
 
-      // Constrain movement within map-wrapper boundaries
       newX = Math.max(
         0,
         Math.min(
@@ -231,16 +218,14 @@ function App() {
     setIsDragging(false);
   }, []);
 
-  // Add and remove global mouse event listeners for dragging
   useEffect(() => {
     if (isDragging) {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     } else {
       document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mouseup", handleMouseUp);
     }
-    // Cleanup: remove listeners when component unmounts or isDragging changes
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
@@ -250,8 +235,18 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>MSM Web GIS</h1>
-        <p>ພັດທະນາໂດຍ ມິດສະໄໝ ແກ້ວເທື່ອນຄຳ</p>
+        <button
+          className="sidebar-toggle-button"
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        >
+          {isSidebarCollapsed ? (
+            <PanelRight size={24} />
+          ) : (
+            <PanelLeft size={24} />
+          )}
+        </button>
+        <h1>ແອັບ Web Mapping ຂອງຂ້ອຍ</h1>
+        <p>ສ້າງດ້ວຍ Vite, React, OpenLayers</p>
       </header>
 
       <main className="app-main responsive-main">
@@ -277,12 +272,11 @@ function App() {
             style={{
               left: toolbarPosition.x,
               top: toolbarPosition.y,
-              // Use transform for smoother animation and better performance
               transform:
                 typeof toolbarPosition.y === "string"
                   ? `translateY(-50%)`
-                  : "none", // For initial '50%' top
-              cursor: isDragging ? "grabbing" : "grab", // Change cursor when dragging
+                  : "none",
+              cursor: isDragging ? "grabbing" : "grab",
             }}
             onMouseDown={handleMouseDown}
           >
@@ -293,12 +287,13 @@ function App() {
           </div>
         </div>
 
-        <div className="sidebar" style={{ width: "300px", maxWidth: "100%" }}>
+        <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
           <h2>ການຄວບຄຸມແຜນທີ່</h2>
           <ProvinceControls
             setCenter={setCenterState}
             setZoom={setZoomState}
             openLayersLoaded={openLayersLoadedState}
+            isSidebarCollapsed={isSidebarCollapsed} // ສົ່ງ isSidebarCollapsed ໄປ ProvinceControls
           />
           <div className="footer">&copy; 2025 Web Mapping App</div>
         </div>

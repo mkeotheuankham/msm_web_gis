@@ -1,6 +1,12 @@
 import React from "react";
 
-function ProvinceControls({ setCenter, setZoom, openLayersLoaded }) {
+// ຮັບ isSidebarCollapsed prop ເພີ່ມເຕີມ
+function ProvinceControls({
+  setCenter,
+  setZoom,
+  openLayersLoaded,
+  isSidebarCollapsed,
+}) {
   const provinces = [
     { name: "ນະຄອນຫຼວງວຽງຈັນ", coords: [102.6, 17.96] },
     { name: "ຜົ້ງສາລີ", coords: [102.1, 21.68] },
@@ -31,10 +37,13 @@ function ProvinceControls({ setCenter, setZoom, openLayersLoaded }) {
             setCenter(province.coords);
             setZoom(10);
           }}
-          className="province-button"
+          // ແກ້ໄຂ: ຍ້າຍຄໍາເຫັນອອກຈາກ attribute value string
+          className={`province-button ${
+            isSidebarCollapsed ? "province-button-collapsed" : ""
+          }`}
           disabled={!openLayersLoaded}
         >
-          📍 {province.name}
+          📍 <span>{province.name}</span> {/* ຫໍ່ຊື່ແຂວງດ້ວຍ <span> */}
         </button>
       ))}
     </div>

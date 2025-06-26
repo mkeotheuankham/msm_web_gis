@@ -10,62 +10,82 @@ body,
 #root {
   margin: 0;
   padding: 0;
-  height: 100%; /* ກຳນົດຄວາມສູງ 100% ຂອງ viewport */
-  width: 100%; /* ກຳນົດຄວາມກວ້າງ 100% ຂອງ viewport */
-  overflow: hidden; /* ປ້ອງກັນ scrollbar ທີ່ບໍ່ຕ້ອງການ */
-  font-family: sans-serif; /* ຕັ້ງຄ່າ font ພື້ນຖານ */
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: sans-serif;
 }
 
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; /* ໃຊ້ 100vh ເພື່ອຮັບປະກັນວ່າ container ເຕັມຄວາມສູງຂອງ viewport */
+  height: 100vh;
 }
 
 .app-header {
   background: linear-gradient(to right, #2563eb, #4f46e5);
   color: white;
-  padding: 0.25rem 1rem; /* ປັບປ່ຽນ padding ໃຫ້ແຄບລົງ */
-  text-align: center;
+  padding: 0.25rem 1rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: center; /* ຈັດຫົວຂໍ້ ແລະປຸ່ມ Toggle ຢູ່ກາງ */
   align-items: center;
+  position: relative; /* ເພື່ອຈັດວາງປຸ່ມ Toggle ໄດ້ງ່າຍຂຶ້ນ */
+}
+
+/* Style for the sidebar toggle button */
+.sidebar-toggle-button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%; /* ເຮັດໃຫ້ເປັນວົງມົນ */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  position: absolute; /* ຈັດວາງຢ່າງແນ່ນອນ */
+  right: 1rem; /* ປ່ຽນຈາກ left ເປັນ right */
+  z-index: 100; /* ໃຫ້ຢູ່ເທິງສຸດ */
+}
+
+.sidebar-toggle-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ປັບປຸງຂະໜາດ font ແລະ margin ຂອງຂໍ້ຄວາມໃນ header ໃຫ້ແຄບລົງ */
 .app-header h1 {
-  font-size: 1.5rem; /* ປັບຂະໜາດ font ຂອງຫົວຂໍ້ */
-  margin: 0; /* ລຶບ margin ເລີ່ມຕົ້ນ */
-  line-height: 1.2; /* ປັບໄລຍະຫ່າງຂອງແຖວ */
+  font-size: 1.5rem;
+  margin: 0 auto; /* ຈັດຫົວຂໍ້ຢູ່ກາງທີ່ແທ້ຈິງ */
+  line-height: 1.2;
 }
 
 .app-header p {
-  font-size: 0.8rem; /* ປັບຂະໜາດ font ຂອງຂໍ້ຄວາມນ້ອຍ */
-  margin: 0; /* ລຶບ margin ເລີ່ມຕົ້ນ */
-  line-height: 1.2; /* ປັບໄລຍະຫ່າງຂອງແຖວ */
+  font-size: 0.8rem;
+  margin: 0 auto;
+  line-height: 1.2;
 }
 
 .app-main {
   display: flex;
-  flex: 1; /* ນີ້ແມ່ນສຳຄັນ, ໃຫ້ app-main ໃຊ້ພື້ນທີ່ທີ່ເຫຼືອທັງໝົດ */
+  flex: 1;
   padding: 1rem;
   gap: 1rem;
   background-color: #f3f4f6;
-  align-items: stretch; /* ໃຫ້ items ຍືດຕາມແນວຕັ້ງ (ຄ່າເລີ່ມຕົ້ນ, ແຕ່ກໍານົດໄວ້ເພື່ອຄວາມຊັດເຈນ) */
-  min-height: 0; /* ປ້ອງກັນບັນຫາ overflow ໃນ Flex container ເອງ */
+  align-items: stretch;
+  min-height: 0;
 }
 
 .map-wrapper {
-  flex: 1; /* ໃຊ້ພື້ນທີ່ແນວນອນທີ່ເຫຼືອໃນ app-main */
-  position: relative; /* ສຳຄັນ: ເພື່ອໃຫ້ drawing-tools-floating ສາມາດຈັດວາງແບບ absolute ໄດ້ */
+  flex: 1;
+  position: relative;
   background: white;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  height: 100%; /* ສຳຄັນ: ຮັບປະກັນວ່າ map-wrapper ຍືດເຕັມຄວາມສູງຂອງ app-main */
-  min-height: 0; /* ຊ່ວຍໃນການກຳນົດຂະໜາດຂອງ Flex item */
+  height: 100%;
+  min-height: 0;
 }
 
 .map-container {
@@ -96,54 +116,98 @@ body,
 }
 
 .sidebar {
-  width: 300px;
-  background: white;
-  padding: 1rem;
+  width: 300px; /* ປັບຄວາມກວ້າງເລີ່ມຕົ້ນໃຫ້ກວ້າງຂຶ້ນ */
+  background: #2c2c2c;
+  color: white;
+  padding: 0.8rem;
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  height: 100%; /* ສຳຄັນ: ຮັບປະກັນວ່າ sidebar ຍືດເຕັມຄວາມສູງຂອງ app-main */
+  gap: 0.8rem;
+  height: 100%;
+  transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: 50px;
+  padding: 0.4rem;
+}
+
+/* ເຊື່ອງຂໍ້ຄວາມແລະຫົວຂໍ້ເມື່ອ Sidebar ຖືກຫຍໍ້ */
+.sidebar.collapsed h2,
+.sidebar.collapsed .footer {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  margin: 0;
+  padding: 0;
+}
+
+.sidebar.collapsed .province-grid {
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+  overflow: hidden;
+  opacity: 0;
+  max-height: 0;
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  pointer-events: none;
+}
+
+.sidebar.collapsed .province-button {
+  justify-content: center;
+  padding: 0.4rem;
+  width: 100%;
 }
 
 .sidebar h2 {
-  font-size: 1.25rem;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 0.5rem;
+  font-size: 1.2rem;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.4rem;
 }
 
 .footer {
-  margin-top: auto; /* ຜັກດັນ footer ໄປລຸ່ມສຸດຂອງ sidebar */
+  margin-top: auto;
   text-align: center;
-  font-size: 0.8rem;
-  color: #6b7280;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 1rem;
+  font-size: 0.75rem;
+  color: #a0a0a0;
+  border-top: 1px solid #444;
+  padding-top: 0.8rem;
 }
 
 .province-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  flex: 1; /* ສຳຄັນ: ໃຫ້ ProvinceControls ຍືດເຕັມພື້ນທີ່ທີ່ເຫຼືອໃນ sidebar */
-  overflow-y: auto; /* ເພີ່ມ scrollbar ຖ້າເນື້ອໃນລົ້ນ */
-  min-height: 0; /* ຊ່ວຍໃນການກຳນົດຂະໜາດຂອງ flex item ທີ່ເປັນ scrollable */
+  grid-template-columns: repeat(2, 1fr); /* ຍັງຄົງເປັນ 2 ຖັນໃນສະພາບປົກກະຕິ */
+  gap: 0.4rem; /* ປັບ gap ໃຫ້ແຄບລົງ */
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  transition: grid-template-columns 0.3s ease, gap 0.3s ease,
+    max-height 0.3s ease, opacity 0.3s ease;
 }
 
 .province-button {
-  padding: 0.75rem;
-  font-weight: 600;
-  background-color: royalblue;
+  padding: 0.2rem 0.2rem;
+  font-weight: 500;
+  font-size: 0.85rem; /* ປັບຂະໜາດ font ໃຫ້ໃຫຍ່ຂຶ້ນ */
+  background-color: #4f46e5;
   color: white;
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease, padding 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+  width: 100%;
 }
 
 .province-button:hover {
-  background-color: #2563eb;
+  background-color: #635bff;
   transform: scale(1.03);
 }
 
@@ -152,105 +216,110 @@ body,
   cursor: not-allowed;
 }
 
-/* --- Styles for Floating Drawing Toolbar (ປັບປຸງ) --- */
-.drawing-tools-floating {
-  position: absolute; /* ຕຳແໜ່ງລອຍຢູ່ເທິງ map-wrapper */
-  z-index: 1001; /* ໃຫ້ຢູ່ເທິງສຸດຂອງອົງປະກອບອື່ນໆ */
-  background: rgba(0, 0, 0, 0.7); /* ພື້ນຫຼັງໂປ່ງໃສສີດໍາ */
-  color: white; /* ສີຂໍ້ຄວາມ */
-  padding: 0.4rem; /* ປັບ padding ໃຫ້ເໝາະສົມ (ນ້ອຍລົງ) */
-  border-radius: 10px; /* ປັບຂະໜາດມຸມມົນໃຫ້ເໝາະສົມ */
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3); /* ປັບ shadow ໃຫ້ເບົາລົງ */
-  width: 50px; /* ຄວາມກວ້າງເລີ່ມຕົ້ນ (ນ້ອຍລົງ) */
-  transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out; /* ເພີ່ມ transition */
-  overflow: hidden; /* ເຊື່ອງຂໍ້ຄວາມທີ່ລົ້ນອອກ */
-  display: flex; /* ໃຊ້ flex ເພື່ອຈັດລຽງເນື້ອໃນ toolbar */
-  flex-direction: column; /* ຈັດລຽງເນື້ອໃນ toolbar ເປັນແນວຕັ້ງ */
-  align-items: center; /* ຈັດໄອຄອນຢູ່ກາງແນວນອນ */
+/* ProvinceControls: Style for the text inside province-button when sidebar is collapsed */
+.province-button-collapsed span {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out, max-width 0.2s ease-in-out;
+}
+.province-button-collapsed {
+  justify-content: center !important;
+  gap: 0 !important;
+  padding: 0.4rem !important;
 }
 
-/* ເມື່ອເອົາເມົ້າໄປວາງ, ຂະຫຍາຍແຖບເຄື່ອງມື */
+/* --- Styles for Floating Drawing Toolbar --- */
+.drawing-tools-floating {
+  position: absolute;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.4rem;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  width: 50px;
+  transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .drawing-tools-floating:hover {
-  width: 160px; /* ຄວາມກວ້າງເມື່ອເອົາເມົ້າໄປວາງ (ໃຫ້ພຽງພໍສໍາລັບຂໍ້ຄວາມ) */
-  background: rgba(0, 0, 0, 0.85); /* ເຂັ້ມຂຶ້ນເມື່ອ Hover */
+  width: 160px;
+  background: rgba(0, 0, 0, 0.85);
 }
 
 .drawing-toolbar h3 {
-  display: none; /* ເຊື່ອງຫົວຂໍ້ Drawing Toolbar */
+  display: none;
 }
 
 .drawing-buttons-grid {
-  display: flex; /* ປ່ຽນຈາກ grid ເປັນ flex */
-  flex-direction: column; /* ຈັດລຽງປຸ່ມເປັນແນວຕັ້ງ */
-  gap: 0.4rem; /* ໄລຍະຫ່າງລະຫວ່າງປຸ່ມ (ນ້ອຍລົງ) */
-  width: 100%; /* ເຮັດໃຫ້ grid ເຕັມຄວາມກວ້າງຂອງ floating container */
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
 }
 
 .drawing-button {
-  padding: 0.6rem 0.4rem; /* ປັບ padding ຂອງປຸ່ມ (ນ້ອຍລົງ) */
-  font-weight: 500; /* ປັບຄວາມໜາຂອງ font */
-  font-size: 0.85rem; /* ປັບຂະໜາດ font ຂອງປຸ່ມ */
-  background-color: transparent; /* ປ່ຽນພື້ນຫຼັງປຸ່ມເປັນໂປ່ງໃສ */
-  color: white; /* ຕັ້ງສີຂໍ້ຄວາມເປັນສີຂາວ */
-  border-radius: 6px; /* ປັບຂະໜາດມຸມມົນປຸ່ມ */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* ເພີ່ມຂອບບາງໆ */
+  padding: 0.4rem;
+  font-weight: 500;
+  font-size: 0.85rem;
+  background-color: transparent;
+  color: white;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s ease,
-    border-color 0.2s ease;
+    border-color 0.2s ease, padding 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* ຈັດລຽງເນື້ອໃນໄປຊ້າຍ */
-  gap: 0.4rem; /* ໄລຍະຫ່າງລະຫວ່າງ icon ແລະ text (ນ້ອຍລົງ) */
-  white-space: nowrap; /* ປ້ອງກັນບໍ່ໃຫ້ຂໍ້ຄວາມຂຶ້ນບັນທັດໃໝ່ */
+  justify-content: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.drawing-tools-floating:hover .drawing-button {
+  justify-content: flex-start;
 }
 
 .drawing-button:hover {
-  background-color: rgba(
-    255,
-    255,
-    255,
-    0.15
-  ); /* ສີພື້ນຫຼັງເມື່ອ Hover (ອ່ອນລົງ) */
-  transform: scale(1.01); /* ປັບຂະໜາດການຂະຫຍາຍເມື່ອ Hover */
-  border-color: rgba(255, 255, 255, 0.4); /* ເຮັດໃຫ້ຂອບເຫັນຊັດຂຶ້ນເມື່ອ Hover */
+  background-color: rgba(255, 255, 255, 0.15);
+  transform: scale(1.01);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .drawing-button-text {
-  opacity: 0; /* ເຊື່ອງຂໍ້ຄວາມໃນຕອນຕົ້ນ */
-  width: 0; /* ກຳນົດຄວາມກວ້າງເປັນ 0 ເພື່ອເຊື່ອງ */
-  overflow: hidden; /* ເຊື່ອງເນື້ອໃນທີ່ລົ້ນ */
-  transition: opacity 0.2s ease-in-out, width 0.2s ease-in-out; /* ເພີ່ມ transition */
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease-in-out, max-width 0.2s ease-in-out;
 }
 
 .drawing-tools-floating:hover .drawing-button-text {
-  opacity: 1; /* ສະແດງຂໍ້ຄວາມເມື່ອ toolbar ຖືກ Hover */
-  width: auto; /* ໃຫ້ຂໍ້ຄວາມສະແດງເຕັມທີ່ */
-  padding-left: 0.2rem; /* ໄລຍະຫ່າງເລັກນ້ອຍຫຼັງຈາກໄອຄອນ */
+  opacity: 1;
+  max-width: 100px;
+  padding-left: 0.2rem;
 }
 
 .drawing-button.clear-button {
-  background-color: transparent; /* ປ່ຽນພື້ນຫຼັງປຸ່ມລຶບເປັນໂປ່ງໃສ */
-  border-color: rgba(244, 67, 54, 0.4); /* ສີແດງທີ່ໂປ່ງໃສ (ອ່ອນລົງ) */
+  background-color: transparent;
+  border-color: rgba(244, 67, 54, 0.4);
 }
 
 .drawing-button.clear-button:hover {
-  background-color: rgba(244, 67, 54, 0.15); /* ສີແດງເມື່ອ Hover (ອ່ອນລົງ) */
+  background-color: rgba(244, 67, 54, 0.15);
   border-color: rgba(244, 67, 54, 0.6);
 }
 
 .drawing-button:disabled {
-  opacity: 0.3; /* ປັບ opacity ເມື່ອ disabled */
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 /* --- Responsive Styles --- */
-.responsive-main {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  flex-direction: row;
-}
-
 @media (max-width: 768px) {
   .responsive-main {
     flex-direction: column;
@@ -261,28 +330,43 @@ body,
     height: auto;
   }
 
+  /* ເຊື່ອງເນື້ອໃນ sidebar ໃນມືຖືເມື່ອຖືກຫຍໍ້ */
+  .sidebar.collapsed {
+    width: 100%;
+    height: 60px;
+    padding: 0.5rem 1rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .sidebar.collapsed h2,
+  .sidebar.collapsed .footer,
+  .sidebar.collapsed .province-grid {
+    display: none;
+  }
+
   .map-wrapper {
     height: 400px;
   }
 
-  /* ປັບຕຳແໜ່ງ toolbar ລອຍໃນມືຖື ຖ້າຈຳເປັນ */
   .drawing-tools-floating {
     top: 1rem !important;
     left: 1rem !important;
     transform: none !important;
-    width: auto; /* ໃນມືຖືອາດຈະບໍ່ຕ້ອງການຂະຫຍາຍ/ຫົດຕົວ */
-    flex-direction: row; /* ປ່ຽນເປັນແນວນອນໃນມືຖືເພື່ອປະຢັດພື້ນທີ່ */
-    flex-wrap: wrap; /* ໃຫ້ປຸ່ມລົງແຖວໃຫມ່ໄດ້ */
+    width: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
     padding: 0.6rem;
     gap: 0.6rem;
   }
 
   .drawing-tools-floating:hover {
-    width: auto; /* ບໍ່ມີການຂະຫຍາຍໃນມືຖື */
+    width: auto;
   }
 
   .drawing-tools-floating .drawing-button-text {
-    opacity: 1; /* ສະແດງຂໍ້ຄວາມຕະຫຼອດໃນມືຖື */
+    opacity: 1;
     width: auto;
     padding-left: 0.2rem;
   }

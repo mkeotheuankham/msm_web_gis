@@ -1,6 +1,6 @@
 import React from "react";
 
-// ຮັບ isSidebarCollapsed prop ເພີ່ມເຕີມ
+// ຮັບ setCenter, setZoom ຈາກ props (ມາຈາກ App.jsx)
 function ProvinceControls({
   setCenter,
   setZoom,
@@ -34,16 +34,20 @@ function ProvinceControls({
         <button
           key={province.name}
           onClick={() => {
-            setCenter(province.coords);
-            setZoom(10);
+            setCenter(province.coords); // ໃຊ້ setCenter ຈາກ props
+            setZoom(10); // ໃຊ້ setZoom ຈາກ props
           }}
-          // ແກ້ໄຂ: ຍ້າຍຄໍາເຫັນອອກຈາກ attribute value string
           className={`province-button ${
             isSidebarCollapsed ? "province-button-collapsed" : ""
           }`}
           disabled={!openLayersLoaded}
+          aria-label={province.name} // Accessibility
         >
-          📍 <span>{province.name}</span> {/* ຫໍ່ຊື່ແຂວງດ້ວຍ <span> */}
+          📍{" "}
+          <span className={isSidebarCollapsed ? "hidden-text" : ""}>
+            {province.name}
+          </span>{" "}
+          {/* ຫໍ່ຊື່ແຂວງດ້ວຍ <span> ແລະເຊື່ອງເມື່ອ sidebar ຫຍໍ້ */}
         </button>
       ))}
     </div>

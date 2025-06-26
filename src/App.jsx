@@ -250,8 +250,8 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>ແອັບ Web Mapping ຂອງຂ້ອຍ</h1>
-        <p>ສ້າງດ້ວຍ Vite, React, OpenLayers</p>
+        <h1>MSM Web GIS</h1>
+        <p>ພັດທະນາໂດຍ ມິດສະໄໝ ແກ້ວເທື່ອນຄຳ</p>
       </header>
 
       <main className="app-main responsive-main">

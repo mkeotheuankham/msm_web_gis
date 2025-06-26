@@ -1,71 +1,71 @@
 import React from "react";
+import {
+  MapPin,
+  LineChart,
+  Square,
+  Circle,
+  Trash2,
+  XCircle,
+} from "lucide-react"; // ນໍາເຂົ້າໄອຄອນຈາກ lucide-react
 
-const DrawingToolbar = ({ activeTool, onSelectTool, onClearAll }) => {
-  const tools = [
-    { key: "None", label: "🧭" },
-    { key: "Point", label: "📍" },
-    { key: "LineString", label: "📏" },
-    { key: "Polygon", label: "🟥" },
-  ];
-
+// DrawingToolbar component ຮັບ prop 'onDrawTypeChange' ແລະ 'onClearDrawings'
+// ເພື່ອຈັດການການປ່ຽນແປງປະເພດການແຕ້ມ ແລະການລຶບຮູບແຕ້ມ
+const DrawingToolbar = ({ onDrawTypeChange, onClearDrawings }) => {
   return (
     <div className="drawing-toolbar">
-      {tools.map((tool) => (
+      {/* ຫົວຂໍ້ນີ້ອາດຈະຖືກເຊື່ອງໄວ້ ຫຼືຈັດຮູບແບບແຕກຕ່າງກັນໃນ CSS ເພື່ອໃຫ້ເໝາະສົມກັບຮູບແບບແຖບເຄື່ອງມືແນວຕັ້ງ */}
+      {/* <h3>ເຄື່ອງມືແຕ້ມ</h3> */}
+      <div className="drawing-buttons-grid">
         <button
-          key={tool.key}
-          className={`tool-btn ${activeTool === tool.key ? "active" : ""}`}
-          onClick={() => onSelectTool(tool.key)}
-          title={tool.key}
+          onClick={() => onDrawTypeChange("Point")}
+          className="drawing-button"
         >
-          {tool.label}
+          <MapPin size={20} />{" "}
+          <span className="drawing-button-text">ແຕ້ມຈຸດ</span>
         </button>
-      ))}
-      <button
-        className="tool-btn danger"
-        onClick={onClearAll}
-        title="Clear all drawings"
-      >
-        🗑️
-      </button>
-
-      <style>{`
-        .drawing-toolbar {
-          position: absolute;
-          top: 100px;
-          left: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          z-index: 1000;
-          background: rgba(30, 30, 30, 0.75);
-          padding: 8px;
-          border-radius: 10px;
-          backdrop-filter: blur(6px);
-        }
-        .tool-btn {
-          font-size: 20px;
-          background: none;
-          border: none;
-          color: white;
-          width: 40px;
-          height: 40px;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: background 0.2s ease;
-        }
-        .tool-btn:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-        .tool-btn.active {
-          background: rgba(0, 122, 255, 0.7);
-        }
-        .tool-btn.danger {
-          background: rgba(200, 50, 50, 0.7);
-        }
-        .tool-btn.danger:hover {
-          background: rgba(255, 80, 80, 0.9);
-        }
-      `}</style>
+        <button
+          onClick={() => onDrawTypeChange("LineString")}
+          className="drawing-button"
+        >
+          <LineChart size={20} />{" "}
+          <span className="drawing-button-text">ແຕ້ມເສັ້ນ</span>
+        </button>
+        <button
+          onClick={() => onDrawTypeChange("Polygon")}
+          className="drawing-button"
+        >
+          <Square size={20} />{" "}
+          <span className="drawing-button-text">ແຕ້ມຮູບຫຼາຍລ່ຽມ</span>
+        </button>
+        <button
+          onClick={() => onDrawTypeChange("Circle")}
+          className="drawing-button"
+        >
+          <Circle size={20} />{" "}
+          <span className="drawing-button-text">ແຕ້ມວົງມົນ</span>
+        </button>
+        {/* ທ່ານສາມາດເພີ່ມເຄື່ອງມືອື່ນໆ ເຊັ່ນ: Modify, Select, Delete ຢູ່ບ່ອນນີ້ */}
+        {/* <button onClick={() => onDrawTypeChange('Modify')} className="drawing-button">
+          <Pencil size={20} /> <span className="drawing-button-text">ແກ້ໄຂ</span>
+        </button>
+        <button onClick={() => onDrawTypeChange('Select')} className="drawing-button">
+          <MousePointer2 size={20} /> <span className="drawing-button-text">ເລືອກ</span>
+        </button> */}
+        <button
+          onClick={onClearDrawings}
+          className="drawing-button clear-button"
+        >
+          <Trash2 size={20} />{" "}
+          <span className="drawing-button-text">ລຶບທັງໝົດ</span>
+        </button>
+        <button
+          onClick={() => onDrawTypeChange("None")}
+          className="drawing-button"
+        >
+          <XCircle size={20} />{" "}
+          <span className="drawing-button-text">ຢຸດແຕ້ມ</span>
+        </button>
+      </div>
     </div>
   );
 };

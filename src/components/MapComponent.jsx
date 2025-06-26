@@ -17,7 +17,7 @@ import "ol/ol.css";
 
 import ProvinceControls from "./ProvinceControls";
 import DrawingToolbar from "./DrawingToolbar";
-import BaseMapSwitcher from "./map/BaseMapSwitcher";
+import BaseMapSwitcher from "./map/BaseMapSwitcher"; // ແກ້ໄຂເສັ້ນທາງນໍາເຂົ້າທີ່ນີ້
 import { PanelLeft, PanelRight } from "lucide-react";
 
 function MapComponent() {

@@ -23,14 +23,14 @@ body,
 }
 
 .app-header {
-  background: linear-gradient(to right, #2563eb, #4f46e5);
+  background: rgba(26, 26, 26, 0.85); /* ປັບເປັນສີເຂັ້ມແບບໂປ່ງໃສ */
   color: white;
-  padding: 0.25rem 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   display: flex;
-  justify-content: center; /* ຈັດຫົວຂໍ້ ແລະປຸ່ມ Toggle ຢູ່ກາງ */
+  justify-content: center;
   align-items: center;
-  position: relative; /* ເພື່ອຈັດວາງປຸ່ມ Toggle ໄດ້ງ່າຍຂຶ້ນ */
+  position: relative;
 }
 
 /* Style for the sidebar toggle button */
@@ -40,14 +40,14 @@ body,
   color: white;
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 50%; /* ເຮັດໃຫ້ເປັນວົງມົນ */
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease;
-  position: absolute; /* ຈັດວາງຢ່າງແນ່ນອນ */
-  right: 1rem; /* ປ່ຽນຈາກ left ເປັນ right */
-  z-index: 100; /* ໃຫ້ຢູ່ເທິງສຸດ */
+  position: absolute;
+  right: 1rem;
+  z-index: 100;
 }
 
 .sidebar-toggle-button:hover {
@@ -56,13 +56,13 @@ body,
 
 /* ປັບປຸງຂະໜາດ font ແລະ margin ຂອງຂໍ້ຄວາມໃນ header ໃຫ້ແຄບລົງ */
 .app-header h1 {
-  font-size: 1.5rem;
-  margin: 0 auto; /* ຈັດຫົວຂໍ້ຢູ່ກາງທີ່ແທ້ຈິງ */
+  font-size: 1.6rem;
+  margin: 0 auto;
   line-height: 1.2;
 }
 
 .app-header p {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   margin: 0 auto;
   line-height: 1.2;
 }
@@ -116,9 +116,9 @@ body,
 }
 
 .sidebar {
-  width: 300px; /* ປັບຄວາມກວ້າງເລີ່ມຕົ້ນໃຫ້ກວ້າງຂຶ້ນ */
-  background: #2c2c2c;
-  color: white;
+  width: 300px; /* ຄວາມກວ້າງເລີ່ມຕົ້ນໃຫ້ກວ້າງຂຶ້ນ */
+  background: #2c2c2c; /* ປ່ຽນເປັນສີເຂັ້ມ */
+  color: white; /* ປ່ຽນສີຂໍ້ຄວາມເປັນສີຂາວ */
   padding: 0.8rem;
   border-radius: 12px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -179,8 +179,8 @@ body,
 
 .province-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* ຍັງຄົງເປັນ 2 ຖັນໃນສະພາບປົກກະຕິ */
-  gap: 0.4rem; /* ປັບ gap ໃຫ້ແຄບລົງ */
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
@@ -191,7 +191,7 @@ body,
 .province-button {
   padding: 0.2rem 0.2rem;
   font-weight: 500;
-  font-size: 0.85rem; /* ປັບຂະໜາດ font ໃຫ້ໃຫຍ່ຂຶ້ນ */
+  font-size: 0.85rem;
   background-color: #4f46e5;
   color: white;
   border-radius: 8px;

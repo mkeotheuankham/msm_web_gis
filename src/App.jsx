@@ -3,7 +3,7 @@ import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
-import { fromLonLat, toLonLat } from "ol/proj"; // ຍັງຄົງນຳໃຊ້ fromLonLat, toLonLat
+import { fromLonLat, toLonLat } from "ol/proj"; // ແກ້ໄຂ: ລຶບ ' = ' ອອກ
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Draw from "ol/interaction/Draw";
@@ -224,7 +224,7 @@ function App() {
       document.addEventListener("mouseup", handleMouseUp);
     } else {
       document.removeEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseup", handleMouseUp);
     }
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
@@ -245,8 +245,8 @@ function App() {
             <PanelLeft size={24} />
           )}
         </button>
-        <h1>ແອັບ Web Mapping ຂອງຂ້ອຍ</h1>
-        <p>ສ້າງດ້ວຍ Vite, React, OpenLayers</p>
+        <h1>MSM Web GIS</h1>
+        <p>ລະບົບຄຸ້ມຄອງຂໍ້ມູນແຜນທີ່ GIS</p>
       </header>
 
       <main className="app-main responsive-main">

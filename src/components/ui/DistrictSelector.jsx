@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, ChevronUp } from "lucide-react"; // ນໍາເຂົ້າໄອຄອນລູກສອນ
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 const DistrictSelector = ({
   districts,
@@ -8,15 +8,21 @@ const DistrictSelector = ({
   isExpanded,
   onToggleExpansion,
   selectedProvinceForDistricts,
+  onDistrictSelectForBuildings,
 }) => {
   if (isSidebarCollapsed) {
-    return null; // ບໍ່ສະແດງຫຍັງເມື່ອ sidebar ຖືກຫຍໍ້
+    return null;
   }
 
-  // ກັ່ນຕອງເມືອງຕາມແຂວງທີ່ຖືກເລືອກ
+  // Filter districts based on the selected province
   const filteredDistricts = selectedProvinceForDistricts
     ? districts.filter((d) => d.province === selectedProvinceForDistricts)
-    : []; // ຖ້າບໍ່ມີແຂວງຖືກເລືອກ, ບໍ່ສະແດງເມືອງໃດໆ
+    : [];
+
+  const handleDistrictToggle = (districtName) => {
+    onToggle(districtName); // Existing toggle for parcel layers
+    onDistrictSelectForBuildings(districtName); // New: pass selected district for building layers
+  };
 
   return (
     <div
@@ -32,8 +38,6 @@ const DistrictSelector = ({
         </button>
       </div>
       <div className="district-content-wrapper">
-        {" "}
-        {/* wrapper ສໍາລັບ animation */}
         {isExpanded && (
           <div className="district-grid">
             {filteredDistricts.length > 0 ? (
@@ -43,7 +47,7 @@ const DistrictSelector = ({
                     <input
                       type="checkbox"
                       checked={district.checked}
-                      onChange={() => onToggle(district.name)}
+                      onChange={() => handleDistrictToggle(district.name)} // Use the new handler
                       style={{ accentColor: district.color }}
                     />
                     <>
@@ -61,7 +65,7 @@ const DistrictSelector = ({
             ) : (
               <p className="no-districts-message">
                 {selectedProvinceForDistricts
-                  ? `ບໍ່ມີຂໍ້ມູນເມືອງສໍາລັບແຂວງ ${selectedProvinceForDistricts}.`
+                  ? `ບໍ່ມີຂໍ້ມູນເມືອງສໍາລັບແຂວງ "${selectedProvinceForDistricts}" ນີ້. (ກະລຸນາກວດສອບ MapComponent.jsx ເພື່ອເພີ່ມຂໍ້ມູນເມືອງສໍາລັບແຂວງນີ້)`
                   : "ກະລຸນາເລືອກແຂວງເພື່ອເບິ່ງລາຍຊື່ເມືອງ."}
               </p>
             )}

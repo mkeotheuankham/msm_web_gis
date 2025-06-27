@@ -7,7 +7,7 @@ import XYZ from "ol/source/XYZ";
 import { fromLonLat, toLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
-import Draw, { createBox } from "ol/interaction/Draw"; // ນໍາເຂົ້າ createBox
+import Draw, { createBox } from "ol/interaction/Draw";
 import Style from "ol/style/Style";
 import Fill from "ol/style/Fill";
 import Stroke from "ol/style/Stroke";
@@ -23,42 +23,52 @@ import CoordinateBar from "./components/ui/CoordinateBar";
 import ParcelLayerControl from "./components/map/ParcelLayerControl";
 import ParcelInfoPanel from "./components/ui/ParcelInfoPanel";
 import DistrictSelector from "./components/ui/DistrictSelector";
+import RoadLayer from "./components/map/RoadLayer";
+import BuildingLayer from "./components/map/BuildingLayer";
+
 import { PanelLeft, PanelRight } from "lucide-react";
 
 function MapComponent() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const vectorSourceRef = useRef(new VectorSource()); // ສໍາລັບການແຕ້ມ
-  const drawRef = useRef(null); // ສໍາລັບ interaction ການແຕ້ມ
+  const vectorSourceRef = useRef(new VectorSource());
+  const drawRef = useRef(null);
   const [selectedBaseMap, setSelectedBaseMap] = useState("osm");
   const [openLayersLoadedState, setOpenLayersLoadedState] = useState(false);
-  const [centerState, setCenterState] = useState(fromLonLat([102.6, 17.97])); // Vientiane, Laos (ເມືອງຈັນທະບູລີປະມານນີ້)
-  const [zoomState, setZoomState] = useState(12); // ເພີ່ມ zoom ເຂົ້າໄປໃກ້ຂຶ້ນ
+  const [centerState, setCenterState] = useState(fromLonLat([102.6, 17.97]));
+  const [zoomState, setZoomState] = useState(12);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [drawingMode, setDrawingMode] = useState(null); // 'Point', 'LineString', 'Polygon', 'Circle', 'Box', null
+  const [drawingMode, setDrawingMode] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
 
-  // ສະຖານະການຫຍໍ້/ຂະຫຍາຍຂອງສ່ວນ "ເມືອງ" ແລະ "ແຂວງ" ພາຍໃນ Sidebar
-  const [isDistrictsExpanded, setIsDistrictsExpanded] = useState(true); // ເລີ່ມຕົ້ນໃຫ້ເປີດ
-  const [isProvincesExpanded, setIsProvincesExpanded] = useState(true); // ເລີ່ມຕົ້ນໃຫ້ເປີດ
+  const [isDistrictsExpanded, setIsDistrictsExpanded] = useState(true);
+  const [isProvincesExpanded, setIsProvincesExpanded] = useState(true);
 
-  // ສະຖານະສໍາລັບແຂວງທີ່ຖືກເລືອກເພື່ອສະແດງເມືອງ
+  // Province selected for displaying districts in DistrictSelector
   const [selectedProvinceForDistricts, setSelectedProvinceForDistricts] =
     useState(null);
 
-  // For draggable drawing toolbar
-  const [toolbarPosition, setToolbarPosition] = useState({ x: 50, y: 50 }); // Initial position
+  // States for road and building layer filtering
+  const [selectedProvinceForRoads, setSelectedProvinceForRoads] =
+    useState(null);
+  const [selectedDistrictForBuildings, setSelectedDistrictForBuildings] =
+    useState(null);
+
+  const [isRoadLayerVisible, setIsRoadLayerVisible] = useState(false);
+  const [isBuildingLayerVisible, setIsBuildingLayerVisible] = useState(false);
+
+  const [toolbarPosition, setToolbarPosition] = useState({ x: 50, y: 50 });
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const toolbarRef = useRef(null);
 
-  // ລາຍຊື່ເມືອງທັງໝົດ 9 ເມືອງ ພ້ອມ endpoint ແລະ dataKey ທີ່ໃຫ້ມາ
-  // ໄດ້ເພີ່ມຄຸນສົມບັດ 'province' ເພື່ອເຊື່ອມໂຍງກັບແຂວງ
   const [districts, setDistricts] = useState([
+    // !!! ສໍາຄັນ: ຊື່ແຂວງໃນນີ້ (province) ຕ້ອງກົງກັບ "name" ໃນ provinces array ຂອງ ProvinceControls !!!
+    // ຖ້າທ່ານມີຂໍ້ມູນເມືອງສໍາລັບແຂວງອື່ນ, ໃຫ້ເພີ່ມຢູ່ລຸ່ມນີ້
     {
       name: "chanthabury",
       displayName: "ຈັນທະບູລີ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ", // Add province name
+      province: "VientianeCapital", // ຕ້ອງກົງກັບ province.name ໃນ ProvinceControls
       endpoint: "https://msmapi.up.railway.app/api/rest/chanthabury",
       dataKey: "cadastre_parcel_details_0101",
       checked: false,
@@ -71,7 +81,7 @@ function MapComponent() {
     {
       name: "sikodtabong",
       displayName: "ສີໂຄດຕະບອງ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/sikodtabong",
       dataKey: "cadastre_parcel_details_0102",
       checked: false,
@@ -84,7 +94,7 @@ function MapComponent() {
     {
       name: "xaisettha",
       displayName: "ໄຊເສດຖາ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/xaisettha",
       dataKey: "cadastre_parcel_details_0103",
       checked: false,
@@ -97,7 +107,7 @@ function MapComponent() {
     {
       name: "sisattanak",
       displayName: "ສີສັດຕະນາກ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/sisattanak",
       dataKey: "cadastre_parcel_details_0104",
       checked: false,
@@ -110,7 +120,7 @@ function MapComponent() {
     {
       name: "naxaithong",
       displayName: "ນາຊາຍທອງ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/naxaithong",
       dataKey: "cadastre_parcel_details_0105",
       checked: false,
@@ -123,7 +133,7 @@ function MapComponent() {
     {
       name: "xaithany",
       displayName: "ໄຊທານີ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/xaithany",
       dataKey: "cadastre_parcel_details_0106",
       checked: false,
@@ -136,7 +146,7 @@ function MapComponent() {
     {
       name: "hadxaifong",
       displayName: "ຫາດຊາຍຟອງ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/hadxaifong",
       dataKey: "cadastre_parcel_details_0107",
       checked: false,
@@ -149,7 +159,7 @@ function MapComponent() {
     {
       name: "xangthong",
       displayName: "ສັງທອງ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/xangthong",
       dataKey: "cadastre_parcel_details_0108",
       checked: false,
@@ -162,7 +172,7 @@ function MapComponent() {
     {
       name: "pakngum",
       displayName: "ປາກງື່ມ",
-      province: "ນະຄອນຫຼວງວຽງຈັນ",
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/pakngum",
       dataKey: "cadastre_parcel_details_0109",
       checked: false,
@@ -172,16 +182,17 @@ function MapComponent() {
       color: "#8c33ff",
       hasLoaded: false,
     },
-    // Add other districts for other provinces here if you have their data and endpoints
-    // Example for a hypothetical district in Luang Prabang:
-    // {
-    //   name: "luangprabang_district1",
-    //   displayName: "ເມືອງຫຼວງພະບາງ 1",
-    //   province: "ຫຼວງພະບາງ",
-    //   endpoint: "https://msmapi.up.railway.app/api/rest/luangprabang_district1",
-    //   dataKey: "cadastre_parcel_details_LPB01",
-    //   checked: false, parcels: [], loading: false, error: null, color: "#1a73e8", hasLoaded: false,
-    // },
+    // Example for Luang Prabang districts - You need to add actual district data here
+    /*
+    {
+      name: "luangprabang_city",
+      displayName: "ເມືອງຫຼວງພະບາງ",
+      province: "LuangPrabang",
+      endpoint: "YOUR_LUANGPRABANG_CITY_API",
+      dataKey: "luangprabang_city_parcels",
+      checked: false, parcels: [], loading: false, error: null, color: "#AAAAAA", hasLoaded: false,
+    },
+    */
   ]);
 
   const toggleSidebar = () => {
@@ -194,33 +205,46 @@ function MapComponent() {
         d.name === districtName ? { ...d, checked: !d.checked } : d
       )
     );
+    // When a district is toggled, also set it as the selected district for building layers
+    setSelectedDistrictForBuildings(districtName);
   }, []);
 
-  // ຟັງຊັນທີ່ຈະຖືກສົ່ງໄປ ProvinceControls ເພື່ອອັບເດດແຂວງທີ່ຖືກເລືອກ
-  const handleProvinceSelection = useCallback((provinceName) => {
-    setSelectedProvinceForDistricts(provinceName);
-    // Optionally, you might want to collapse the district section when a new province is selected
-    // setIsDistrictsExpanded(true); // Keep it open to show districts of new province
+  // Handler for when a province button is clicked in ProvinceControls
+  const handleProvinceSelectionForMap = useCallback(
+    (coords, zoom, provinceName) => {
+      if (mapInstanceRef.current && openLayersLoadedState) {
+        // Check if map is loaded
+        mapInstanceRef.current.getView().setCenter(coords); // Use direct coords (fromLonLat already applied in ProvinceControls)
+        mapInstanceRef.current.getView().setZoom(zoom);
+        setCenterState(coords); // Update local state for consistency
+        setZoomState(zoom); // Update local state for consistency
+      } else {
+        console.warn("Map not loaded or ready to move yet.");
+      }
+      setSelectedProvinceForDistricts(provinceName); // For parcel layer districts
+      setSelectedProvinceForRoads(provinceName); // For road layer filtering
+    },
+    [openLayersLoadedState]
+  ); // Depend on openLayersLoadedState
+
+  const handleDistrictSelectionForBuildings = useCallback((districtName) => {
+    setSelectedDistrictForBuildings(districtName);
   }, []);
 
-  // Main useEffect for map initialization and setup
   useEffect(() => {
     let map;
     let resizeObserver;
 
-    // Use a flag to prevent re-initialization if already done
     if (mapInstanceRef.current) {
       return;
     }
 
     const initOpenLayersMap = () => {
       if (!mapRef.current) {
-        // If ref is not yet available, defer initialization
-        setTimeout(initOpenLayersMap, 100); // ລອງອີກຄັ້ງຫຼັງຈາກຊັກຊ້າເລັກນ້ອຍ
+        setTimeout(initOpenLayersMap, 100);
         return;
       }
 
-      // Check if container has dimensions before initializing
       const width = mapRef.current.clientWidth;
       const height = mapRef.current.clientHeight;
 
@@ -228,18 +252,16 @@ function MapComponent() {
         console.log(
           "Map container dimensions are zero. Retrying map initialization..."
         );
-        setTimeout(initOpenLayersMap, 100); // ຖ້າຂະໜາດຍັງເປັນສູນ, ລອງອີກຄັ້ງ
+        setTimeout(initOpenLayersMap, 100);
         return;
       }
 
-      // ຖ້າ mapInstance ຖືກ initialize ແລ້ວ, ພຽງແຕ່ກວດສອບ target ແລະ updateSize
       if (mapInstanceRef.current) {
         mapInstanceRef.current.setTarget(mapRef.current);
         mapInstanceRef.current.updateSize();
         return;
       }
 
-      // Base Layers (ຊັ້ນພື້ນຖານ)
       const osmLayer = new TileLayer({
         source: new OSM(),
         properties: { name: "OSM" },
@@ -271,21 +293,19 @@ function MapComponent() {
       });
 
       map = new Map({
-        target: mapRef.current, // ກໍານົດ target ໂດຍກົງເມື່ອສ້າງແຜນທີ່
+        target: mapRef.current,
         layers: [osmLayer, googleSatLayer, googleHybridLayer],
         view: initialView,
         controls: defaultControls(),
         interactions: defaultInteractions(),
-        pixelRatio: 1, // ຕັ້ງຄ່າ pixelRatio ເປັນ 1 ເພື່ອປັບປຸງປະສິດທິພາບການຊູມ
+        pixelRatio: 1,
       });
 
       mapInstanceRef.current = map;
-      setOpenLayersLoadedState(true);
+      setOpenLayersLoadedState(true); // Set to true once map is initialized
 
-      // ບັງຄັບໃຫ້ແຜນທີ່ຄິດໄລ່ຂະໜາດຂອງມັນຄືນໃໝ່ທັນທີ
       map.updateSize();
 
-      // Initial base map selection (ການເລືອກແຜນທີ່ພື້ນຖານເບື້ອງຕົ້ນ)
       map.getLayers().forEach((layer) => {
         if (layer.get("name") === selectedBaseMap) {
           layer.setVisible(true);
@@ -294,7 +314,6 @@ function MapComponent() {
         }
       });
 
-      // Handle map view changes (ຈັດການການປ່ຽນແປງມຸມມອງແຜນທີ່)
       map.getView().on("change:center", () => {
         setCenterState(map.getView().getCenter());
       });
@@ -302,7 +321,6 @@ function MapComponent() {
         setZoomState(map.getView().getZoom());
       });
 
-      // Add a resize observer to automatically update map size if its container changes
       resizeObserver = new ResizeObserver(() => {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.updateSize();
@@ -313,11 +331,9 @@ function MapComponent() {
       console.log("OpenLayers Map initialized successfully.");
     };
 
-    // Start the map initialization process
     initOpenLayersMap();
 
     return () => {
-      // Cleanup function
       if (mapInstanceRef.current) {
         mapInstanceRef.current.setTarget(undefined);
         mapInstanceRef.current = null;
@@ -326,33 +342,29 @@ function MapComponent() {
         resizeObserver.unobserve(mapRef.current);
       }
     };
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
-  // This effect ensures map updates its size when sidebar collapses/expands
+  // Ensure map view updates when centerState or zoomState changes
   useEffect(() => {
     if (mapInstanceRef.current) {
-      // Small delay to allow DOM layout to settle after sidebar transition
-      const timer = setTimeout(() => {
-        mapInstanceRef.current.updateSize();
-      }, 300); // Adjust delay if needed based on sidebar transition duration
-
-      return () => clearTimeout(timer);
-    }
-  }, [isSidebarCollapsed]); // Depend on sidebar collapsed state
-
-  // Sync center and zoom state with map (ຊິ້ງສະຖານະ center ແລະ zoom ກັບແຜນທີ່)
-  useEffect(() => {
-    if (
-      mapInstanceRef.current &&
-      (mapInstanceRef.current.getView().getCenter() !== centerState ||
-        mapInstanceRef.current.getView().getZoom() !== zoomState)
-    ) {
-      mapInstanceRef.current.getView().setCenter(centerState);
-      mapInstanceRef.current.getView().setZoom(zoomState);
+      const view = mapInstanceRef.current.getView();
+      if (view.getCenter() !== centerState || view.getZoom() !== zoomState) {
+        view.setCenter(centerState);
+        view.setZoom(zoomState);
+      }
     }
   }, [centerState, zoomState]);
 
-  // Drawing Layer and Interactions (ຊັ້ນການແຕ້ມ ແລະ ການໂຕ້ຕອບ)
+  useEffect(() => {
+    if (mapInstanceRef.current) {
+      const timer = setTimeout(() => {
+        mapInstanceRef.current.updateSize();
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isSidebarCollapsed]);
+
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -385,7 +397,6 @@ function MapComponent() {
       map.addLayer(vectorLayer);
     }
 
-    // Remove previous draw interaction if any (ລຶບ interaction ການແຕ້ມກ່ອນໜ້າຖ້າມີ)
     if (drawRef.current) {
       map.removeInteraction(drawRef.current);
       drawRef.current = null;
@@ -397,17 +408,17 @@ function MapComponent() {
         case "Point":
         case "LineString":
         case "Polygon":
-        case "Circle": // New case for Circle
+        case "Circle":
           drawInteraction = new Draw({
             source: vectorSourceRef.current,
             type: drawingMode,
           });
           break;
-        case "Box": // New case for Box (rectangle)
+        case "Box":
           drawInteraction = new Draw({
             source: vectorSourceRef.current,
-            type: "Circle", // 'Box' is implemented as a 'Circle' type with a special geometry function
-            geometryFunction: createBox(), // OpenLayers utility to create a box geometry
+            type: "Circle",
+            geometryFunction: createBox(),
           });
           break;
         default:
@@ -424,10 +435,8 @@ function MapComponent() {
     vectorSourceRef.current.clear();
   };
 
-  // Draggable Toolbar Logic (ເພີ່ມ logic ສໍາລັບ draggable toolbar)
   const handleMouseDown = useCallback((e) => {
     setIsDragging(true);
-    // Calculate offset from mouse position to toolbar's top-left corner
     const rect = toolbarRef.current.getBoundingClientRect();
     dragOffset.current = {
       x: e.clientX - rect.left,
@@ -442,7 +451,6 @@ function MapComponent() {
       let newX = e.clientX - mapRect.left - dragOffset.current.x;
       let newY = e.clientY - mapRect.top - dragOffset.current.y;
 
-      // Clamp position within map boundaries
       const toolbarWidth = toolbarRef.current.offsetWidth;
       const toolbarHeight = toolbarRef.current.offsetHeight;
 
@@ -458,7 +466,6 @@ function MapComponent() {
     setIsDragging(false);
   }, []);
 
-  // Add event listeners to window for dragging (ສໍາຄັນສໍາລັບການລາກທີ່ຖືກຕ້ອງ)
   useEffect(() => {
     if (isDragging) {
       window.addEventListener("mousemove", handleMouseMove);
@@ -474,7 +481,6 @@ function MapComponent() {
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  // Touch events for mobile dragging
   const handleTouchStart = useCallback((e) => {
     if (e.touches.length === 1) {
       setIsDragging(true);
@@ -483,7 +489,7 @@ function MapComponent() {
         x: e.touches[0].clientX - rect.left,
         y: e.touches[0].clientY - rect.top,
       };
-      e.preventDefault(); // Prevent scrolling
+      e.preventDefault();
     }
   }, []);
 
@@ -501,7 +507,7 @@ function MapComponent() {
       newY = Math.max(0, Math.min(newY, mapRect.height - toolbarHeight));
 
       setToolbarPosition({ x: newX, y: newY });
-      e.preventDefault(); // Prevent scrolling
+      e.preventDefault();
     },
     [isDragging]
   );
@@ -534,7 +540,6 @@ function MapComponent() {
       </header>
       <main className="app-main">
         <div className="map-wrapper">
-          {/* Add inline styles to ensure map-container always has dimensions */}
           <div
             ref={mapRef}
             className="map-container"
@@ -569,6 +574,16 @@ function MapComponent() {
                 setDistricts={setDistricts}
                 onParcelSelect={setSelectedParcel}
               />
+              <RoadLayer
+                map={mapInstanceRef.current}
+                isVisible={isRoadLayerVisible}
+                selectedProvince={selectedProvinceForRoads}
+              />
+              <BuildingLayer
+                map={mapInstanceRef.current}
+                isVisible={isBuildingLayerVisible}
+                selectedDistrict={selectedDistrictForBuildings}
+              />
             </>
           )}
 
@@ -597,9 +612,34 @@ function MapComponent() {
             )}
           </button>
 
-          {/* Render controls only when sidebar is NOT collapsed */}
           {!isSidebarCollapsed && (
             <>
+              <div className="layer-toggles-section">
+                <h3>ຊັ້ນຂໍ້ມູນ</h3>
+                <div className="toggle-group">
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={isRoadLayerVisible}
+                      onChange={() =>
+                        setIsRoadLayerVisible(!isRoadLayerVisible)
+                      }
+                    />
+                    <span>ເສັ້ນທາງ</span>
+                  </label>
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={isBuildingLayerVisible}
+                      onChange={() =>
+                        setIsBuildingLayerVisible(!isBuildingLayerVisible)
+                      }
+                    />
+                    <span>ສິ່ງປຸກສ້າງ</span>
+                  </label>
+                </div>
+              </div>
+
               <DistrictSelector
                 districts={districts}
                 onToggle={toggleDistrict}
@@ -608,18 +648,21 @@ function MapComponent() {
                 onToggleExpansion={() =>
                   setIsDistrictsExpanded(!isDistrictsExpanded)
                 }
-                selectedProvinceForDistricts={selectedProvinceForDistricts} // Pass selected province
+                selectedProvinceForDistricts={selectedProvinceForDistricts}
+                onDistrictSelectForBuildings={
+                  handleDistrictSelectionForBuildings
+                }
               />
               <ProvinceControls
-                setCenter={setCenterState}
-                setZoom={setZoomState}
+                setCenter={setCenterState} // Not used directly, but kept for clarity if needed elsewhere
+                setZoom={setZoomState} // Not used directly, but kept for clarity if needed elsewhere
                 openLayersLoaded={openLayersLoadedState}
                 isSidebarCollapsed={isSidebarCollapsed}
                 isExpanded={isProvincesExpanded}
                 onToggleExpansion={() =>
                   setIsProvincesExpanded(!isProvincesExpanded)
                 }
-                onProvinceSelectForDistricts={handleProvinceSelection} // Pass the new handler
+                onProvinceSelectForMap={handleProvinceSelectionForMap} // Pass the handler
               />
               <div className="footer">&copy; 2025 Web Mapping Application</div>
             </>

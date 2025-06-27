@@ -73,9 +73,6 @@ function MapComponent() {
 
   const [activeBaseMap, setActiveBaseMap] = useState(baseMapLayers[0].name);
 
-  console.log("MapComponent render - centerState:", centerState);
-  console.log("MapComponent render - zoomState:", zoomState);
-
   const vectorLayerRef = useRef(
     new VectorLayer({
       source: vectorSourceRef.current,
@@ -136,10 +133,8 @@ function MapComponent() {
       controls: defaultControls().extend([]),
     });
 
-    // Add vector layer (always present for drawings)
     map.addLayer(vectorLayerRef.current);
 
-    // --- Add the INITIAL base map layer here during map setup ---
     const initialBaseMapDef = baseMapLayers.find(
       (layer) => layer.name === activeBaseMap
     );
@@ -151,7 +146,7 @@ function MapComponent() {
           source: new OSM({
             attributions: initialBaseMapDef.attribution,
           }),
-          properties: { isBaseLayer: true }, // Mark as base layer
+          properties: { isBaseLayer: true },
         });
       } else if (initialBaseMapDef.source === "XYZ") {
         initialBaseLayer = new TileLayer({
@@ -159,23 +154,19 @@ function MapComponent() {
             url: initialBaseMapDef.url,
             attributions: initialBaseMapDef.attribution,
           }),
-          properties: { isBaseLayer: true }, // Mark as base layer
+          properties: { isBaseLayer: true },
         });
       }
       if (initialBaseLayer) {
-        // Add the initial base layer at the bottom (index 0) of the layer stack
         map.getLayers().insertAt(0, initialBaseLayer);
       }
     }
-    // --- END INITIAL base map setup ---
 
-    mapInstanceRef.current = map; // Store map instance in ref
+    mapInstanceRef.current = map;
 
     const handleMoveEnd = () => {
       const newCenter = toLonLat(map.getView().getCenter());
       const newZoom = map.getView().getZoom();
-      console.log("Map 'moveend' event - newCenter:", newCenter);
-      console.log("Map 'moveend' event - newZoom:", newZoom);
       setCenterState([
         parseFloat(newCenter[0].toFixed(2)),
         parseFloat(newCenter[1].toFixed(2)),
@@ -184,8 +175,6 @@ function MapComponent() {
     };
 
     map.on("moveend", handleMoveEnd);
-
-    // Set OpenLayers loaded state AFTER map instance is ready
     setOpenLayersLoadedState(true);
 
     return () => {
@@ -195,15 +184,11 @@ function MapComponent() {
         mapInstanceRef.current = null;
       }
     };
-  }, []); // Empty dependency array: runs only once on mount
+  }, []);
 
-  // Effect to manage base map layers when activeBaseMap changes
-  // This effect will now only run *after* the initial map setup is complete
+  // Effect to manage base map layers
   useEffect(() => {
-    // Only proceed if the map is initialized and OpenLayers is loaded
     if (!mapInstanceRef.current || !openLayersLoadedState) return;
-
-    // Remove all existing base layers marked as 'isBaseLayer'
     const layersToRemove = [];
     mapInstanceRef.current.getLayers().forEach((layer) => {
       if (layer.get("isBaseLayer")) {
@@ -214,7 +199,6 @@ function MapComponent() {
       mapInstanceRef.current.removeLayer(layer)
     );
 
-    // Find the currently active base map definition
     const currentBaseMapDef = baseMapLayers.find(
       (layer) => layer.name === activeBaseMap
     );
@@ -238,25 +222,17 @@ function MapComponent() {
         });
       }
       if (newBaseLayer) {
-        // Add the new base layer at the bottom (index 0) of the layer stack
         mapInstanceRef.current.getLayers().insertAt(0, newBaseLayer);
       }
     }
-  }, [activeBaseMap, openLayersLoadedState]); // Depends on both to ensure correct timing
+  }, [activeBaseMap, openLayersLoadedState]);
 
-  // useEffect to update View when centerState or zoomState changes (e.g., from ProvinceControls)
+  // useEffect to update View
   useEffect(() => {
     if (mapInstanceRef.current) {
       const view = mapInstanceRef.current.getView();
-      console.log(
-        "useEffect [centerState, zoomState] triggered. Updating view."
-      );
       if (centerState && centerState.length === 2) {
         view.setCenter(fromLonLat(centerState));
-      } else {
-        console.warn(
-          "centerState is undefined or invalid, cannot set map center."
-        );
       }
       view.setZoom(zoomState);
     }
@@ -293,10 +269,8 @@ function MapComponent() {
   }, [drawType]);
 
   // Functions for draggable toolbar
-  // handleMouseDown, handleMouseMove, handleMouseUp are the parts that handle dragging
   const handleMouseDown = useCallback(
     (e) => {
-      // Prevent text selection while dragging
       e.preventDefault();
       setIsDragging(true);
 
@@ -307,7 +281,6 @@ function MapComponent() {
 
       const handleMouseMove = (event) => {
         if (isDragging) {
-          // Use event's clientX/Y to calculate the new position of the toolbar
           setToolbarPosition({
             x: event.clientX - offsetX,
             y: event.clientY - offsetY,
@@ -325,7 +298,7 @@ function MapComponent() {
       window.addEventListener("mouseup", handleMouseUp);
     },
     [isDragging]
-  ); // isDragging is a dependency because it's used inside handleMouseMove
+  );
 
   const handleDrawTypeChange = useCallback((type) => {
     setDrawType(type);
@@ -342,18 +315,7 @@ function MapComponent() {
           <h1>MSM Web GIS</h1>
           <p>ລະບົບຂໍ້ມູນພູມສາດສຳລັບການຕິດຕາມ ແລະ ປະເມີນຜົນ</p>
         </div>
-
-        <button
-          onClick={toggleSidebar}
-          className="toggle-button sidebar-toggle-button"
-          aria-label={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
-        >
-          {isSidebarCollapsed ? (
-            <PanelRight size={24} />
-          ) : (
-            <PanelLeft size={24} />
-          )}
-        </button>
+        {/* The toggle button has been moved from here */}
       </header>
 
       <main className="app-main responsive-main">
@@ -364,7 +326,6 @@ function MapComponent() {
             style={{ width: "100%", height: "100%" }}
           ></div>
 
-          {/* Base Map Switcher component - Positioned on the map */}
           <BaseMapSwitcher
             activeBaseMap={activeBaseMap}
             setActiveBaseMap={setActiveBaseMap}
@@ -372,36 +333,45 @@ function MapComponent() {
             openLayersLoaded={openLayersLoadedState}
           />
 
-          {/* Draggable Drawing Toolbar, floating on top of map-wrapper */}
           <div
             ref={draggableToolbarRef}
-            className={`drawing-tools-floating ${
-              isDragging ? "dragging" : ""
-            }`} /* Add 'dragging' class */
+            className={`drawing-tools-floating ${isDragging ? "dragging" : ""}`}
             style={{
               left: toolbarPosition.x,
               top: toolbarPosition.y,
-              // Vertical positioning, only used if y is a string (e.g., "50%")
               transform:
                 typeof toolbarPosition.y === "string"
                   ? `translateY(-50%)`
                   : "none",
-              cursor: isDragging ? "grabbing" : "grab", // Change cursor to indicate draggable
+              cursor: isDragging ? "grabbing" : "grab",
             }}
-            onMouseDown={handleMouseDown} // Start dragging on mouse down
+            onMouseDown={handleMouseDown}
           >
             <DrawingToolbar
               onDrawTypeChange={handleDrawTypeChange}
               onClearDrawings={handleClearDrawings}
             />
           </div>
-          {/* CoordinateBar component - ໃຫ້ map instance ແກ່ມັນ */}
+
           {mapInstanceRef.current && (
             <CoordinateBar map={mapInstanceRef.current} />
           )}
         </div>
 
         <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
+          {/* The toggle button is now here */}
+          <button
+            onClick={toggleSidebar}
+            className="toggle-button sidebar-toggle-button"
+            aria-label={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
+          >
+            {isSidebarCollapsed ? (
+              <PanelRight size={24} />
+            ) : (
+              <PanelLeft size={24} />
+            )}
+          </button>
+
           <h2>Map Controls</h2>
           <ProvinceControls
             setCenter={setCenterState}

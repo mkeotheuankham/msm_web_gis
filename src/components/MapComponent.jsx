@@ -29,7 +29,7 @@ function MapComponent() {
   const draggableToolbarRef = useRef(null); // Ref for the draggable toolbar
 
   const [centerState, setCenterState] = useState([102.6, 17.96]);
-  const [zoomState, setZoomState] = useState(8);
+  const [zoomState, setZoomState] = useState(7);
   // This state indicates if the OpenLayers map instance is fully loaded and ready
   const [openLayersLoadedState, setOpenLayersLoadedState] = useState(false);
 

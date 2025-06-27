@@ -15,7 +15,6 @@ import CircleStyle from "ol/style/Circle";
 import { defaults as defaultControls } from "ol/control";
 import { defaults as defaultInteractions } from "ol/interaction";
 import "ol/ol.css";
-import { throttle } from "lodash";
 
 import ProvinceControls from "./components/ui/ProvinceControls";
 import DrawingToolbar from "./components/ui/DrawingToolbar";

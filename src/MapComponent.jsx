@@ -13,12 +13,14 @@ import Fill from "ol/style/Fill";
 import Stroke from "ol/style/Stroke";
 import CircleStyle from "ol/style/Circle";
 import { defaults as defaultControls } from "ol/control";
+import { defaults as defaultInteractions } from "ol/interaction";
 import "ol/ol.css";
+import { throttle } from "lodash";
 
 import ProvinceControls from "./components/ui/ProvinceControls";
 import DrawingToolbar from "./components/ui/DrawingToolbar";
 import BaseMapSwitcher from "./components/map/BaseMapSwitcher";
-import CoordinateBar from "./components/ui/CoordinateBar"; // ນໍາເຂົ້າ CoordinateBar
+import CoordinateBar from "./components/ui/CoordinateBar";
 import { PanelLeft, PanelRight } from "lucide-react";
 
 function MapComponent() {
@@ -26,20 +28,15 @@ function MapComponent() {
   const mapInstanceRef = useRef(null);
   const vectorSourceRef = useRef(new VectorSource());
   const drawInteractionRef = useRef(null);
-  const draggableToolbarRef = useRef(null); // Ref for the draggable toolbar
+  const draggableToolbarRef = useRef(null);
 
   const [centerState, setCenterState] = useState([102.6, 17.96]);
   const [zoomState, setZoomState] = useState(7);
-  // This state indicates if the OpenLayers map instance is fully loaded and ready
   const [openLayersLoadedState, setOpenLayersLoadedState] = useState(false);
-
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-
   const [drawType, setDrawType] = useState("None");
-  // Initial toolbar position. Use numeric values for precise placement
   const [toolbarPosition, setToolbarPosition] = useState({ x: 20, y: 150 });
-  const [isDragging, setIsDragging] = useState(false); // State to check if currently dragging
-
+  const [isDragging, setIsDragging] = useState(false);
   const [drawnFeatures, setDrawnFeatures] = useState([]);
 
   const baseMapLayers = [
@@ -77,36 +74,22 @@ function MapComponent() {
     new VectorLayer({
       source: vectorSourceRef.current,
       style: new Style({
-        fill: new Fill({
-          color: "rgba(255, 255, 255, 0.2)",
-        }),
-        stroke: new Stroke({
-          color: "#ffcc33",
-          width: 2,
-        }),
+        fill: new Fill({ color: "rgba(255, 255, 255, 0.2)" }),
+        stroke: new Stroke({ color: "#ffcc33", width: 2 }),
         image: new CircleStyle({
           radius: 7,
-          fill: new Fill({
-            color: "#ffcc33",
-          }),
+          fill: new Fill({ color: "#ffcc33" }),
         }),
       }),
     })
   );
 
   const interactionDrawingStyle = new Style({
-    fill: new Fill({
-      color: "rgba(0, 255, 255, 0.2)",
-    }),
-    stroke: new Stroke({
-      color: "#00FFFF",
-      width: 2,
-    }),
+    fill: new Fill({ color: "rgba(0, 255, 255, 0.2)" }),
+    stroke: new Stroke({ color: "#00FFFF", width: 2 }),
     image: new CircleStyle({
       radius: 7,
-      fill: new Fill({
-        color: "#00FFFF",
-      }),
+      fill: new Fill({ color: "#00FFFF" }),
     }),
   });
 
@@ -116,7 +99,6 @@ function MapComponent() {
     setDrawType("None");
   }, []);
 
-  // Effect for map initialization (runs once on mount)
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
@@ -124,13 +106,18 @@ function MapComponent() {
       center: fromLonLat(centerState),
       zoom: zoomState,
       minZoom: 2,
-      maxZoom: 18,
+      maxZoom: 21,
+      constrainResolution: true,
+      multiWorld: false,
     });
 
     const map = new Map({
       target: mapRef.current,
       view: initialView,
-      controls: defaultControls().extend([]),
+      controls: defaultControls({ zoom: false }),
+      interactions: defaultInteractions({
+        doubleClickZoom: false, // ปิด double-click zoom เท่านั้น
+      }),
     });
 
     map.addLayer(vectorLayerRef.current);
@@ -140,38 +127,33 @@ function MapComponent() {
     );
 
     if (initialBaseMapDef) {
-      let initialBaseLayer;
-      if (initialBaseMapDef.source === "OSM") {
-        initialBaseLayer = new TileLayer({
-          source: new OSM({
-            attributions: initialBaseMapDef.attribution,
-          }),
-          properties: { isBaseLayer: true },
-        });
-      } else if (initialBaseMapDef.source === "XYZ") {
-        initialBaseLayer = new TileLayer({
-          source: new XYZ({
-            url: initialBaseMapDef.url,
-            attributions: initialBaseMapDef.attribution,
-          }),
-          properties: { isBaseLayer: true },
-        });
-      }
-      if (initialBaseLayer) {
-        map.getLayers().insertAt(0, initialBaseLayer);
-      }
+      const baseLayer =
+        initialBaseMapDef.source === "OSM"
+          ? new TileLayer({
+              source: new OSM({ attributions: initialBaseMapDef.attribution }),
+              properties: { isBaseLayer: true },
+            })
+          : new TileLayer({
+              source: new XYZ({
+                url: initialBaseMapDef.url,
+                attributions: initialBaseMapDef.attribution,
+              }),
+              properties: { isBaseLayer: true },
+            });
+
+      map.getLayers().insertAt(0, baseLayer);
     }
 
     mapInstanceRef.current = map;
 
     const handleMoveEnd = () => {
-      const newCenter = toLonLat(map.getView().getCenter());
-      const newZoom = map.getView().getZoom();
-      setCenterState([
-        parseFloat(newCenter[0].toFixed(2)),
-        parseFloat(newCenter[1].toFixed(2)),
-      ]);
-      setZoomState(parseFloat(newZoom.toFixed(2)));
+      // const newCenter = toLonLat(map.getView().getCenter());
+      // const newZoom = map.getView().getZoom();
+      // setCenterState([
+      //   parseFloat(newCenter[0].toFixed(2)),
+      //   parseFloat(newCenter[1].toFixed(2)),
+      // ]);
+      // setZoomState(parseFloat(newZoom.toFixed(2)));
     };
 
     map.on("moveend", handleMoveEnd);
@@ -186,59 +168,46 @@ function MapComponent() {
     };
   }, []);
 
-  // Effect to manage base map layers
   useEffect(() => {
     if (!mapInstanceRef.current || !openLayersLoadedState) return;
+
     const layersToRemove = [];
     mapInstanceRef.current.getLayers().forEach((layer) => {
-      if (layer.get("isBaseLayer")) {
-        layersToRemove.push(layer);
-      }
+      if (layer.get("isBaseLayer")) layersToRemove.push(layer);
     });
     layersToRemove.forEach((layer) =>
       mapInstanceRef.current.removeLayer(layer)
     );
 
-    const currentBaseMapDef = baseMapLayers.find(
-      (layer) => layer.name === activeBaseMap
-    );
+    const baseMap = baseMapLayers.find((layer) => layer.name === activeBaseMap);
 
-    if (currentBaseMapDef) {
-      let newBaseLayer;
-      if (currentBaseMapDef.source === "OSM") {
-        newBaseLayer = new TileLayer({
-          source: new OSM({
-            attributions: currentBaseMapDef.attribution,
-          }),
-          properties: { isBaseLayer: true },
-        });
-      } else if (currentBaseMapDef.source === "XYZ") {
-        newBaseLayer = new TileLayer({
-          source: new XYZ({
-            url: currentBaseMapDef.url,
-            attributions: currentBaseMapDef.attribution,
-          }),
-          properties: { isBaseLayer: true },
-        });
-      }
-      if (newBaseLayer) {
-        mapInstanceRef.current.getLayers().insertAt(0, newBaseLayer);
-      }
+    if (baseMap) {
+      const newLayer =
+        baseMap.source === "OSM"
+          ? new TileLayer({
+              source: new OSM({ attributions: baseMap.attribution }),
+              properties: { isBaseLayer: true },
+            })
+          : new TileLayer({
+              source: new XYZ({
+                url: baseMap.url,
+                attributions: baseMap.attribution,
+              }),
+              properties: { isBaseLayer: true },
+            });
+
+      mapInstanceRef.current.getLayers().insertAt(0, newLayer);
     }
   }, [activeBaseMap, openLayersLoadedState]);
 
-  // useEffect to update View
   useEffect(() => {
     if (mapInstanceRef.current) {
       const view = mapInstanceRef.current.getView();
-      if (centerState && centerState.length === 2) {
-        view.setCenter(fromLonLat(centerState));
-      }
+      view.setCenter(fromLonLat(centerState));
       view.setZoom(zoomState);
     }
   }, [centerState, zoomState]);
 
-  // useEffect for handling draw interaction
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -256,7 +225,7 @@ function MapComponent() {
       drawInteractionRef.current = draw;
 
       draw.on("drawend", (event) => {
-        setDrawnFeatures((prevFeatures) => [...prevFeatures, event.feature]);
+        setDrawnFeatures((prev) => [...prev, event.feature]);
       });
     }
 
@@ -268,12 +237,10 @@ function MapComponent() {
     };
   }, [drawType]);
 
-  // Functions for draggable toolbar
   const handleMouseDown = useCallback(
     (e) => {
       e.preventDefault();
       setIsDragging(true);
-
       const offsetX =
         e.clientX - draggableToolbarRef.current.getBoundingClientRect().left;
       const offsetY =
@@ -315,7 +282,6 @@ function MapComponent() {
           <h1>MSM Web GIS</h1>
           <p>ລະບົບຂໍ້ມູນພູມສາດສຳລັບການຕິດຕາມ ແລະ ປະເມີນຜົນ</p>
         </div>
-        {/* The toggle button has been moved from here */}
       </header>
 
       <main className="app-main responsive-main">
@@ -339,10 +305,6 @@ function MapComponent() {
             style={{
               left: toolbarPosition.x,
               top: toolbarPosition.y,
-              transform:
-                typeof toolbarPosition.y === "string"
-                  ? `translateY(-50%)`
-                  : "none",
               cursor: isDragging ? "grabbing" : "grab",
             }}
             onMouseDown={handleMouseDown}
@@ -359,7 +321,6 @@ function MapComponent() {
         </div>
 
         <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
-          {/* The toggle button is now here */}
           <button
             onClick={toggleSidebar}
             className="toggle-button sidebar-toggle-button"

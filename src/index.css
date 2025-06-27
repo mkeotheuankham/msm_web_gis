@@ -80,15 +80,20 @@ body,
   position: relative;
   background: rgba(0, 0, 0, 0.7); /* ພື້ນຫຼັງ map area ມືດ, ໂປ່ງໃສ */
   border-radius: 12px;
-  overflow: hidden;
+  overflow: auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   height: 100%;
   min-height: 0;
 }
 
 .map-container {
-  width: 100%;
-  height: 100%;
+  outline: none;
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+.map-wrapper:focus {
+  outline: none;
 }
 
 .map-loading {
@@ -128,18 +133,17 @@ body,
     background-color 0.5s ease;
   overflow: hidden;
   flex-shrink: 0;
-  position: relative; /* <<<< ADDED THIS */
+  position: relative;
 }
 
+/* ສະຖານະ collapsed ໃໝ່ທີ່ເຊື່ອງທຸກຢ່າງຍົກເວັ້ນປຸ່ມ toggle */
 .sidebar.collapsed {
   width: 50px;
   padding: 0.4rem;
   overflow: hidden;
 }
 
-/* ເຊື່ອງຂໍ້ຄວາມແລະຫົວຂໍ້ເມື່ອ Sidebar ຖືກຫຍໍ້ */
-.sidebar.collapsed h2,
-.sidebar.collapsed .footer {
+.sidebar.collapsed > *:not(.sidebar-toggle-button) {
   display: none;
 }
 
@@ -155,7 +159,7 @@ body,
 }
 
 .sidebar.collapsed h2 {
-  margin-top: 0;
+  display: none;
 }
 
 .footer {
@@ -167,6 +171,10 @@ body,
   padding-top: 0.8rem;
 }
 
+.sidebar.collapsed .footer {
+  display: none;
+}
+
 .province-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -174,6 +182,10 @@ body,
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+}
+
+.sidebar.collapsed .province-grid {
+  display: none;
 }
 
 .province-button {
@@ -356,10 +368,7 @@ body,
   cursor: not-allowed;
 }
 
-/* Styles for Coordinate Bar */
-/* ... (your existing coordinate bar styles) ... */
-
-/* --- NEW STYLES FOR MOVED SIDEBAR TOGGLE BUTTON --- */
+/* --- NEW STYLES FOR SIDEBAR TOGGLE BUTTON --- */
 .sidebar .sidebar-toggle-button {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -372,24 +381,20 @@ body,
   justify-content: center;
   transition: all 0.2s ease;
   width: fit-content;
-}
-
-.sidebar .sidebar-toggle-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
-
-/* Position for expanded sidebar */
-.sidebar:not(.collapsed) .sidebar-toggle-button {
   position: absolute;
   top: 8px;
   right: 8px;
   z-index: 10;
 }
 
-/* Position for collapsed sidebar */
 .sidebar.collapsed .sidebar-toggle-button {
+  position: static;
   margin: 0.2rem auto;
+}
+
+.sidebar-toggle-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
 /* --- Responsive Styles --- */
@@ -400,5 +405,15 @@ body,
     gap: 0.5rem;
   }
 
-  /* Other responsive styles... */
+  .sidebar {
+    width: 100%;
+  }
+
+  .sidebar.collapsed {
+    width: 50px;
+  }
+
+  .map-wrapper {
+    height: 60vh;
+  }
 }

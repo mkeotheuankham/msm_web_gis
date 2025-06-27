@@ -5,6 +5,32 @@
   box-sizing: border-box;
 }
 
+/* ກຳນົດ CSS Variables ສໍາລັບສີສັນ ແລະອື່ນໆ */
+:root {
+  --color-primary-bg: rgba(26, 26, 26, 0.85); /* ພື້ນຫຼັງຫຼັກ (header) */
+  --color-secondary-bg: rgba(
+    44,
+    44,
+    44,
+    0.85
+  ); /* ພື້ນຫຼັງຮອງ (main, sidebar) */
+  --color-map-overlay-bg: rgba(
+    0,
+    0,
+    0,
+    0.7
+  ); /* ພື້ນຫຼັງສໍາລັບ map overlays (loading, drawing tools) */
+  --color-text-light: white; /* ສີຂໍ້ຄວາມຫຼັກ (ຂາວ) */
+  --color-text-muted: #a0a0a0; /* ສີຂໍ້ຄວາມມົວໆ (footer) */
+  --color-border-light: rgba(255, 255, 255, 0.2); /* ສີຂອບອ່ອນໆ */
+  --color-shadow-dark: rgba(0, 0, 0, 0.4); /* ສີເງົາເຂັ້ມ */
+  --color-accent-blue: #4f46e5; /* ສີຟ້າຫຼັກ (ປຸ່ມ) */
+  --color-accent-blue-hover: #635bff; /* ສີຟ້າເມື່ອ hover */
+  --color-error-red: rgba(214, 48, 49, 0.8); /* ສີແດງສໍາລັບຂໍ້ຜິດພາດ */
+  --color-success-green: rgba(40, 167, 69, 0.8); /* ສີຂຽວສໍາລັບສໍາເລັດ */
+  --color-warning-yellow: yellow; /* ສີເຫຼືອງສໍາລັບການເລືອກ/ເຕືອນ */
+}
+
 html,
 body,
 #root {
@@ -13,7 +39,7 @@ body,
   height: 100%; /* 100% ຂອງ viewport */
   width: 100%; /* 100% ຂອງ viewport */
   overflow: hidden; /* ປ້ອງກັນ scrollbars ໂດຍລວມ */
-  font-family: sans-serif;
+  font-family: "Inter", sans-serif; /* ໃຊ້ Inter font (ຖ້າມີ) ຫຼື sans-serif ທົ່ວໄປ */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   display: flex;
@@ -29,24 +55,24 @@ body,
 }
 
 .app-header {
-  background: rgba(26, 26, 26, 0.85); /* ພື້ນຫຼັງ header ມືດ, ໂປ່ງໃສ */
-  color: white; /* ສີຂໍ້ຄວາມຫຼັກ (ຂາວ) */
+  background: var(--color-primary-bg); /* ນໍາໃຊ້ variable */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   padding: 0.75rem 1rem;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* ສີເງົາ */
+  box-shadow: 0 4px 10px var(--color-shadow-dark); /* ປັບເງົາໃຫ້ເຂັ້ມຂຶ້ນເລັກນ້ອຍ */
   display: flex;
-  flex-direction: row; /* ປັບເປັນແນວນອນ */
-  justify-content: space-between; /* ຈັດວາງຫົວຂໍ້ແລະປຸ່ມສະຫຼັບ sidebar */
+  flex-direction: row;
+  justify-content: space-between;
   align-items: center;
   position: relative;
   z-index: 100;
-  flex-shrink: 0; /* ປ້ອງກັນບໍ່ໃຫ້ header ຫຍໍ້ລົງ */
+  flex-shrink: 0;
 }
 
 .app-header .header-title-block {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  flex-grow: 1; /* ໃຫ້ຫົວຂໍ້ໃຊ້ພື້ນທີ່ຫຼາຍຂຶ້ນ */
+  flex-grow: 1;
 }
 
 .app-header h1 {
@@ -54,6 +80,7 @@ body,
   margin: 0;
   line-height: 1.2;
   text-align: left;
+  letter-spacing: -0.02em; /* ປັບໄລຍະຫ່າງຕົວອັກສອນເລັກນ້ອຍ */
 }
 
 .app-header p {
@@ -69,7 +96,7 @@ body,
   flex: 1;
   padding: 1rem;
   gap: 1rem;
-  background-color: rgba(30, 30, 30, 0.85); /* ພື້ນຫຼັງ main ມືດ, ໂປ່ງໃສ */
+  background-color: var(--color-secondary-bg); /* ນໍາໃຊ້ variable */
   align-items: stretch;
   min-height: 0;
   overflow: hidden;
@@ -78,16 +105,19 @@ body,
 .map-wrapper {
   flex: 1;
   position: relative;
-  background: rgba(0, 0, 0, 0.7); /* ພື້ນຫຼັງ map area ມືດ, ໂປ່ງໃສ */
+  background: var(--color-map-overlay-bg); /* ນໍາໃຊ້ variable */
   border-radius: 12px;
-  overflow: auto;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden; /* ປ່ຽນຈາກ auto ເປັນ hidden ເພື່ອຈັດການ scroll ພາຍໃນ */
+  box-shadow: 0 8px 25px var(--color-shadow-dark); /* ເງົາທີ່ເຂັ້ມຂຶ້ນ ແລະ ແຜ່ກວ້າງຂຶ້ນ */
   height: 100%;
   min-height: 0;
 }
 
 .map-container {
   outline: none;
+  width: 100%; /* ຮັບປະກັນຄວາມກວ້າງເຕັມ */
+  height: 100%; /* ຮັບປະກັນຄວາມສູງເຕັມ */
+  /* will-change ແລະ transform ຍັງຄົງຢູ່ */
   will-change: transform, opacity;
   transform: translateZ(0);
 }
@@ -102,7 +132,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.7); /* ພື້ນຫຼັງ loading ມືດ, ໂປ່ງໃສ */
+  background: var(--color-map-overlay-bg); /* ນໍາໃຊ້ variable */
   z-index: 10;
 }
 
@@ -110,48 +140,56 @@ body,
   position: absolute;
   bottom: 1rem;
   left: 1rem;
-  background: rgba(0, 0, 0, 0.7); /* ພື້ນຫຼັງ map info ມືດ, ໂປ່ງໃສ */
+  background: var(--color-map-overlay-bg); /* ນໍາໃຊ້ variable */
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
-  color: white; /* ສີຂໍ້ຄວາມ map info (ຂາວ) */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* ປັບເງົາ */
 }
 
 .sidebar {
-  width: 300px; /* ຄວາມກວ້າງເລີ່ມຕົ້ນໃຫ້ກວ້າງຂຶ້ນ */
-  background: rgba(44, 44, 44, 0.85); /* ພື້ນຫຼັງ sidebar ມືດ, ໂປ່ງໃສ */
-  color: white; /* ສີຂໍ້ຄວາມຫຼັກ (ຂາວ) */
+  width: 300px;
+  background: var(--color-secondary-bg); /* ນໍາໃຊ້ variable */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   padding: 0.8rem;
   border-radius: 12px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 25px var(--color-shadow-dark); /* ເງົາທີ່ເຂັ້ມຂຶ້ນ ແລະ ແຜ່ກວ້າງຂຶ້ນ */
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
   height: 100%;
   transition: width 0.3s ease-in-out, padding 0.3s ease-in-out,
     background-color 0.5s ease;
-  overflow: hidden;
   flex-shrink: 0;
   position: relative;
+  /* Allow vertical scrolling for the expanded sidebar */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ສະຖານະ collapsed ໃໝ່ທີ່ເຊື່ອງທຸກຢ່າງຍົກເວັ້ນປຸ່ມ toggle */
 .sidebar.collapsed {
-  width: 50px;
+  width: 60px; /* ເພີ່ມຂະໜາດເລັກນ້ອຍເພື່ອໃຫ້ເບິ່ງດີຂຶ້ນ */
   padding: 0.4rem;
-  overflow: hidden;
+  overflow-y: hidden; /* Prevent scrolling when collapsed, as content is hidden */
+  overflow-x: hidden; /* Hide horizontal overflow */
+  display: flex; /* Ensure flexbox layout for content inside */
+  flex-direction: column;
+  align-items: center; /* Center items horizontally */
+  gap: 0.2rem; /* Reduced gap for compact display */
 }
 
+/* General rule to hide all children except the toggle button when sidebar is collapsed */
 .sidebar.collapsed > *:not(.sidebar-toggle-button) {
   display: none;
 }
 
 .sidebar h2 {
   font-size: 1.2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* ສີຂອບ (ໂປ່ງໃສ) */
+  border-bottom: 1px solid var(--color-border-light); /* ນໍາໃຊ້ variable */
   padding-bottom: 0.4rem;
-  margin-top: 2.5rem; /* Add margin to push content down below the button */
+  margin-top: 2.5rem;
 }
 
 .sidebar:not(.collapsed) h2 {
@@ -159,99 +197,199 @@ body,
 }
 
 .sidebar.collapsed h2 {
-  display: none;
+  display: none; /* Hide H2 when collapsed */
 }
 
 .footer {
   margin-top: auto;
   text-align: center;
   font-size: 0.75rem;
-  color: #a0a0a0;
-  border-top: 1px solid rgba(255, 255, 255, 0.3); /* ສີຂອບ (ໂປ່ງໃສ) */
+  color: var(--color-text-muted); /* ນໍາໃຊ້ variable */
+  border-top: 1px solid var(--color-border-light); /* ນໍາໃຊ້ variable */
   padding-top: 0.8rem;
 }
 
 .sidebar.collapsed .footer {
-  display: none;
+  display: none; /* Hide footer when collapsed */
 }
 
+/* Province Controls and District Selector shared styling */
+.province-controls,
+.district-selector {
+  flex-shrink: 0; /* Prevents these sections from shrinking in an expanded sidebar */
+  margin-bottom: 0.5rem; /* Space between sections */
+  border-radius: 8px; /* Rounded corners for the sections */
+  background: rgba(0, 0, 0, 0.3); /* Slightly darker background for sections */
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header for collapsible sections */
+.province-controls-header,
+.district-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer; /* Indicate it's clickable */
+}
+
+.province-controls-header h3,
+.district-selector-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.province-controls-header .toggle-button,
+.district-selector-header .toggle-button {
+  background: none;
+  border: none;
+  color: var(--color-text-light);
+  cursor: pointer;
+  padding: 0;
+  display: flex; /* To center the icon */
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+/* Rotate arrow for expanded state */
+.province-controls.expanded .province-controls-header .toggle-button,
+.district-selector.expanded .district-selector-header .toggle-button {
+  transform: rotate(180deg);
+}
+
+/* Content wrapper for collapse/expand animation */
+.province-content-wrapper,
+.district-content-wrapper {
+  overflow: hidden;
+  transition: max-height 0.3s ease-out; /* Smooth transition for expand/collapse */
+}
+
+/* Initial state when collapsed (max-height 0) */
+.province-controls.collapsed .province-content-wrapper,
+.district-selector.collapsed .district-content-wrapper {
+  max-height: 0;
+}
+
+/* When expanded, set a sufficient max-height (adjust as needed) */
+.province-controls.expanded .province-content-wrapper,
+.district-selector.expanded .district-content-wrapper {
+  max-height: 500px; /* Adjust this value if content is taller */
+}
+
+/* Province Grid Specific Styling */
 .province-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.4rem;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.sidebar.collapsed .province-grid {
-  display: none;
+  /* Removed flex: 1 and overflow-y: auto here, as content-wrapper now handles it */
+  padding-right: 5px; /* ເພີ່ມ padding ເພື່ອບໍ່ໃຫ້ເນື້ອຫາຕິດ scrollbar */
 }
 
 .province-button {
-  padding: 0.2rem 0.2rem;
+  padding: 0.4rem 0.6rem; /* ປັບ padding ປຸ່ມ */
   font-weight: 500;
   font-size: 0.85rem;
-  background-color: #4f46e5; /* ສີພື້ນຫຼັງປຸ່ມ (ສີເດີມ) */
-  color: white; /* ສີຂໍ້ຄວາມຫຼັກ (ຂາວ) */
+  background-color: var(--color-accent-blue); /* ນໍາໃຊ້ variable */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   border-radius: 8px;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s ease, background-color 0.2s ease, padding 0.3s ease;
+  transition: all 0.3s ease; /* ປັບ transition ໃຫ້ກວ້າງຂຶ້ນ */
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.2rem;
+  gap: 0.4rem; /* ປັບ gap */
   white-space: nowrap;
   width: 100%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* ເງົາເລັກນ້ອຍ */
 }
 
 .province-button:hover {
-  background-color: #635bff; /* ສີພື້ນຫຼັງປຸ່ມເມື່ອ hover (ສີເດີມ) */
-  transform: scale(1.03);
+  background-color: var(--color-accent-blue-hover); /* ນໍາໃຊ້ variable */
+  transform: translateY(-2px); /* ຍົກຂຶ້ນເລັກນ້ອຍເມື່ອ hover */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* ເງົາທີ່ຊັດເຈນຂຶ້ນເມື່ອ hover */
+}
+
+.province-button:active {
+  transform: translateY(0); /* ກັບຄືນຕໍາແໜ່ງເດີມເມື່ອຄລິກ */
+  box-shadow: none;
+  background-color: var(--color-accent-blue); /* ໃຫ້ກັບຄືນສີເດີມເມື່ອ active */
 }
 
 .province-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
-.province-button-collapsed span {
-  display: none;
+/* District Selector Styling */
+.district-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  padding: 0.2rem 0.5rem;
 }
-.province-button-collapsed {
-  justify-content: center !important;
-  gap: 0 !important;
-  padding: 0.4rem !important;
+
+.district-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.district-item label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.district-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.district-selector .district-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+  padding-right: 5px; /* Add padding for scrollbar */
 }
 
 /* --- Styles for Floating Drawing Toolbar --- */
 .drawing-tools-floating {
   position: absolute;
   z-index: 1001;
-  background: rgba(0, 0, 0, 0.7); /* ພື້ນຫຼັງ toolbar ມືດ (ສີເດີມ) */
-  color: white; /* ສີຂໍ້ຄວາມຫຼັກ (ຂາວ) */
+  background: var(--color-map-overlay-bg); /* ນໍາໃຊ້ variable */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   padding: 0.4rem;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 12px; /* ປັບ radius ໃຫ້ໃຫຍ່ຂຶ້ນ */
+  box-shadow: 0 5px 15px var(--color-shadow-dark); /* ເງົາທີ່ຊັດເຈນຂຶ້ນ */
   width: 50px;
-  transition: width 0.3s ease-in-out, background-color 0.3s ease-in-out;
+  transition: all 0.3s ease; /* ປັບ transition ໃຫ້ກວ້າງຂຶ້ນ */
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: grab; /* ກຳນົດ cursor ເລີ່ມຕົ້ນ */
-  user-select: none; /* ປ້ອງກັນການເລືອກຂໍ້ຄວາມ */
-  touch-action: none; /* ປ້ອງກັນການເຄື່ອນໄຫວແຕະເລີ່ມຕົ້ນຂອງ Browser */
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
 }
 
 .drawing-tools-floating.dragging {
-  cursor: grabbing; /* cursor ເມື່ອກໍາລັງລາກ */
+  cursor: grabbing;
 }
 
+/* ປັບຄວາມກວ້າງເມື່ອ hover ເພື່ອເປີດພື້ນທີ່ໃຫ້ຂໍ້ຄວາມ */
 .drawing-tools-floating:hover {
-  width: 160px;
-  background: rgba(0, 0, 0, 0.85); /* ສີເຂັ້ມກວ່າເມື່ອ hover (ສີເດີມ) */
+  width: 160px; /* ຄວາມກວ້າງເມື່ອຂະຫຍາຍອອກ */
+  background: rgba(0, 0, 0, 0.95); /* ເຂັ້ມຂຶ້ນຫຼາຍເມື່ອ hover */
+  box-shadow: 0 10px 30px var(--color-shadow-dark); /* ເງົາທີ່ເຂັ້ມຂຶ້ນເມື່ອ hover */
 }
 
 .drawing-toolbar h3 {
@@ -270,40 +408,38 @@ body,
   font-weight: 500;
   font-size: 0.85rem;
   background-color: transparent;
-  color: white; /* ສີຂໍ້ຄວາມຫຼັກ (ຂາວ) */
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2); /* ສີຂອບ (ສີເດີມ) */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
+  border-radius: 8px; /* ປັບ radius */
+  border: 1px solid var(--color-border-light); /* ນໍາໃຊ້ variable */
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease,
-    border-color 0.2s ease, padding 0.2s ease;
+  transition: all 0.2s ease; /* ປັບ transition ໃຫ້ກວ້າງຂຶ້ນ */
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center; /* ຈັດ icon ໃຫ້ຢູ່ກາງເມື່ອບໍ່ຂະຫຍາຍ */
   gap: 0.4rem;
   white-space: nowrap;
 }
 
+/* ປັບ justify-content ເມື່ອ hover ແຖບເຄື່ອງມື */
 .drawing-tools-floating:hover .drawing-button {
-  justify-content: flex-start;
+  justify-content: flex-start; /* ຈັດ icon ແລະ text ໄປທາງຊ້າຍເມື່ອຂະຫຍາຍ */
 }
 
 .drawing-button:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-  transform: scale(1.01);
-  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.25); /* ໂປ່ງໃສຫຼາຍຂຶ້ນເມື່ອ hover */
+  transform: translateY(-1px); /* ຍົກຂຶ້ນເລັກນ້ອຍ */
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
-.drawing-button-text {
-  opacity: 0;
-  max-width: 0;
-  overflow: hidden;
-  transition: opacity 0.2s ease-in-out, max-width 0.2s ease-in-out;
+.drawing-button.active {
+  background-color: var(--color-success-green); /* ສີຂຽວເມື່ອ active */
+  border-color: var(--color-success-green);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.drawing-tools-floating:hover .drawing-button-text {
-  opacity: 1;
-  max-width: 100px;
-  padding-left: 0.2rem;
+.drawing-button.active:hover {
+  background-color: rgba(40, 167, 69, 0.9);
+  border-color: rgba(40, 167, 69, 0.9);
 }
 
 .drawing-button.clear-button {
@@ -312,13 +448,25 @@ body,
 }
 
 .drawing-button.clear-button:hover {
-  background-color: rgba(244, 67, 54, 0.15);
-  border-color: rgba(244, 67, 54, 0.6);
+  background-color: rgba(244, 67, 54, 0.25);
+  border-color: rgba(244, 67, 54, 0.8);
 }
 
 .drawing-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Rule to hide text by default for all screen sizes */
+.drawing-button .drawing-button-text {
+  display: none;
+}
+
+/* Rule to show text when the floating toolbar is hovered/expanded for all screen sizes */
+.drawing-tools-floating:hover .drawing-button .drawing-button-text {
+  display: inline;
 }
 
 /* Styles for Base Map Switcher */
@@ -330,13 +478,14 @@ body,
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: white;
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   font-size: 0.9rem;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--color-map-overlay-bg); /* ນໍາໃຊ້ variable */
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px var(--color-shadow-dark); /* ປັບເງົາ */
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .base-map-switcher label {
@@ -344,11 +493,11 @@ body,
 }
 
 .base-map-switcher select {
-  padding: 0.3rem 0.5rem;
+  padding: 0.3rem 0.7rem; /* ປັບ padding ໃຫ້ເໝາະສົມ */
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background-color: rgba(0, 0, 0, 0.2);
-  color: white;
+  border: 1px solid var(--color-border-light); /* ນໍາໃຊ້ variable */
+  background-color: rgba(0, 0, 0, 0.4); /* ເພີ່ມຄວາມເຂັ້ມສີພື້ນຫຼັງ dropdown */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   cursor: pointer;
   font-size: 0.85rem;
   appearance: none;
@@ -356,11 +505,16 @@ body,
   background-repeat: no-repeat;
   background-position: right 0.5rem center;
   background-size: 0.6em;
+  transition: all 0.2s ease;
+}
+
+.base-map-switcher select:hover {
+  background-color: rgba(0, 0, 0, 0.5); /* ເຂັ້ມຂຶ້ນເມື່ອ hover */
 }
 
 .base-map-switcher select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15); /* ເພີ່ມ focus ring ໃຫ້ຊັດເຈນຂຶ້ນ */
 }
 
 .base-map-switcher select:disabled {
@@ -370,36 +524,42 @@ body,
 
 /* --- NEW STYLES FOR SIDEBAR TOGGLE BUTTON --- */
 .sidebar .sidebar-toggle-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(255, 255, 255, 0.15); /* ເພີ່ມຄວາມເຂັ້ມສີ */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* ເພີ່ມຄວາມເຂັ້ມສີ */
+  color: var(--color-text-light); /* ນໍາໃຊ້ variable */
   cursor: pointer;
   padding: 0.4rem;
-  border-radius: 8px;
+  border-radius: 50%; /* ປ່ຽນເປັນວົງມົນ */
+  width: 40px; /* ຂະໜາດຄົງທີ່ */
+  height: 40px; /* ຂະໜາດຄົງທີ່ */
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  width: fit-content;
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px; /* ປັບຕໍາແໜ່ງ */
+  right: 10px; /* ປັບຕໍາແໜ່ງ */
   z-index: 10;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar.collapsed .sidebar-toggle-button {
-  position: static;
-  margin: 0.2rem auto;
+  position: static; /* ປັບຕໍາແໜ່ງເມື່ອ collapsed */
+  margin: 0.5rem auto; /* ຈັດຢູ່ກາງເມື່ອ collapsed */
+  border-radius: 8px; /* ປ່ຽນເປັນສີ່ຫຼ່ຽມມົນເມື່ອ collapsed */
+  width: 40px;
+  height: 40px;
 }
 
 .sidebar-toggle-button:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
+  background-color: rgba(255, 255, 255, 0.25); /* ເຂັ້ມຂຶ້ນເມື່ອ hover */
+  transform: scale(1.08); /* ຂະຫຍາຍໃຫຍ່ຂຶ້ນເລັກນ້ອຍ */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* --- Responsive Styles --- */
 @media (max-width: 768px) {
-  .responsive-main {
+  .app-main {
     flex-direction: column;
     padding: 0.5rem;
     gap: 0.5rem;
@@ -407,13 +567,70 @@ body,
 
   .sidebar {
     width: 100%;
+    max-height: 250px; /* ກໍານົດຄວາມສູງສູງສຸດໃນມືຖື */
   }
 
   .sidebar.collapsed {
-    width: 50px;
+    width: 100%;
+    max-height: 60px; /* ຄວາມສູງເມື່ອ collapsed ໃນມືຖື */
+    /* Ensure scrolling on mobile when collapsed if content overflows */
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .map-wrapper {
-    height: 60vh;
+    height: 60vh; /* ກໍານົດຄວາມສູງ map ໃນມືຖື */
+    flex: none; /* ປ້ອງກັນບໍ່ໃຫ້ map ຂະຫຍາຍຕົວຫຼາຍເກີນໄປ */
+  }
+
+  .base-map-switcher {
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .drawing-tools-floating {
+    top: 0.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 45px;
+    padding: 0.3rem;
+  }
+  .drawing-tools-floating:hover {
+    width: 140px;
+  }
+  .drawing-button {
+    font-size: 0.8rem;
+    padding: 0.3rem;
+  }
+  /* On mobile, text is hidden by default and shown on hover for the floating toolbar */
+  .drawing-button .drawing-button-text {
+    display: none; /* ເຊື່ອງ text ປຸ່ມໃນມືຖື */
+  }
+  .drawing-tools-floating:hover .drawing-button .drawing-button-text {
+    display: inline; /* ສະແດງ text ເມື່ອ hover ໃນ desktop view */
+  }
+
+  .parcel-info-panel {
+    width: 95%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 1rem;
+  }
+
+  .coordinate-button-container {
+    bottom: 5px;
+    right: 5px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .coordinate-history-panel {
+    bottom: 55px;
+    right: 5px;
+    width: 90%;
+    max-height: 180px;
   }
 }

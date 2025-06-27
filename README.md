@@ -9,4 +9,8 @@ src/MapComponent,
 src/components/ui/ProvinceControls,
 src/components/ui/DrawingToolbar,
 src/components/ui/CoordinateBar,
-src/components/map/BaseMapSwitcher
+src/components/ui/DistrictSelector,
+src/components/ui/ParcelInfoPanel,
+src/components/ui/MeasurementTool,
+src/components/map/BaseMapSwitcher,
+src/components/map/ParcelLayerControl

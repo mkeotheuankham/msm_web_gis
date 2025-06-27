@@ -15,10 +15,10 @@ import CircleStyle from "ol/style/Circle";
 import { defaults as defaultControls } from "ol/control";
 import "ol/ol.css";
 
-import ProvinceControls from "./ProvinceControls";
-import DrawingToolbar from "./DrawingToolbar";
+import ProvinceControls from "./ui/ProvinceControls";
+import DrawingToolbar from "./ui/DrawingToolbar";
 import BaseMapSwitcher from "./map/BaseMapSwitcher";
-import CoordinateBar from "./CoordinateBar"; // ນໍາເຂົ້າ CoordinateBar
+import CoordinateBar from "./ui/CoordinateBar"; // ນໍາເຂົ້າ CoordinateBar
 import { PanelLeft, PanelRight } from "lucide-react";
 
 function MapComponent() {

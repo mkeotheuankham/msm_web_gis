@@ -13,7 +13,8 @@ const ProvinceControls = ({
 }) => {
   const provinces = [
     // !!! ສໍາຄັນ: "name" ນີ້ຈະຖືກໃຊ້ສໍາລັບການກັ່ນຕອງເມືອງ ແລະ ຂໍ້ມູນເສັ້ນທາງ !!!
-    // "displayName" ແມ່ນສໍາລັບການສະແດງຜົນເທົ່ານັ້ນ
+    // "displayName" ແມ່ນສໍາລັບການສະແດງຜົນເທົ່ານັ້ນ.
+    // ໃຫ້ແນ່ໃຈວ່າ "name" ກົງກັນລະຫວ່າງ MapComponent ແລະ ProvinceControls
     {
       name: "VientianeCapital",
       displayName: "ນະຄອນຫຼວງວຽງຈັນ",
@@ -117,8 +118,8 @@ const ProvinceControls = ({
   const handleSetView = (coords, zoom, provinceName) => {
     if (openLayersLoaded) {
       // Convert LonLat to map projection coordinates before sending to MapComponent
-      const mapCoords = fromLonLat(coords);
-      onProvinceSelectForMap(mapCoords, zoom, provinceName); // Send map coordinates and province name
+      // MapComponent will then update its state and the map view
+      onProvinceSelectForMap(fromLonLat(coords), zoom, provinceName);
     } else {
       console.warn("OpenLayers map is not loaded yet. Cannot set view.");
     }

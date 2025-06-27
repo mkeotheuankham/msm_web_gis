@@ -205,7 +205,6 @@ function MapComponent() {
         d.name === districtName ? { ...d, checked: !d.checked } : d
       )
     );
-    // When a district is toggled, also set it as the selected district for building layers
     setSelectedDistrictForBuildings(districtName);
   }, []);
 
@@ -235,30 +234,27 @@ function MapComponent() {
     let map;
     let resizeObserver;
 
+    // Only initialize map if it hasn't been initialized yet
     if (mapInstanceRef.current) {
+      // If map is already initialized, just ensure it's targeting the correct element and sized
+      if (mapRef.current) {
+        mapInstanceRef.current.setTarget(mapRef.current);
+        mapInstanceRef.current.updateSize();
+      }
       return;
     }
 
     const initOpenLayersMap = () => {
-      if (!mapRef.current) {
-        setTimeout(initOpenLayersMap, 100);
-        return;
-      }
-
-      const width = mapRef.current.clientWidth;
-      const height = mapRef.current.clientHeight;
-
-      if (width === 0 || height === 0) {
+      // Check for dimensions before initializing the map
+      if (
+        !mapRef.current ||
+        mapRef.current.clientWidth === 0 ||
+        mapRef.current.clientHeight === 0
+      ) {
         console.log(
           "Map container dimensions are zero. Retrying map initialization..."
         );
         setTimeout(initOpenLayersMap, 100);
-        return;
-      }
-
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(mapRef.current);
-        mapInstanceRef.current.updateSize();
         return;
       }
 
@@ -270,7 +266,7 @@ function MapComponent() {
       const googleSatLayer = new TileLayer({
         source: new XYZ({
           url: "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
-          maxZoom: 20,
+          maxZoom: 20, // Keep this as 20 as Google Satellite does not support higher zoom
         }),
         properties: { name: "Google Satellite" },
         visible: false,
@@ -279,7 +275,7 @@ function MapComponent() {
       const googleHybridLayer = new TileLayer({
         source: new XYZ({
           url: "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
-          maxZoom: 20,
+          maxZoom: 20, // Keep this as 20 as Google Hybrid does not support higher zoom
         }),
         properties: { name: "Google Hybrid" },
         visible: false,
@@ -289,7 +285,7 @@ function MapComponent() {
         center: centerState,
         zoom: zoomState,
         minZoom: 2,
-        maxZoom: 20,
+        maxZoom: 22, // Adjusted maxZoom for the map (can go higher than default 20)
       });
 
       map = new Map({
@@ -304,7 +300,7 @@ function MapComponent() {
       mapInstanceRef.current = map;
       setOpenLayersLoadedState(true); // Set to true once map is initialized
 
-      map.updateSize();
+      map.updateSize(); // Force an update size after initialization
 
       map.getLayers().forEach((layer) => {
         if (layer.get("name") === selectedBaseMap) {
@@ -321,12 +317,15 @@ function MapComponent() {
         setZoomState(map.getView().getZoom());
       });
 
+      // Observe map container for size changes
       resizeObserver = new ResizeObserver(() => {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.updateSize();
         }
       });
-      resizeObserver.observe(mapRef.current);
+      if (mapRef.current) {
+        resizeObserver.observe(mapRef.current);
+      }
 
       console.log("OpenLayers Map initialized successfully.");
     };
@@ -335,31 +334,33 @@ function MapComponent() {
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(undefined);
-        mapInstanceRef.current = null;
+        mapInstanceRef.current.setTarget(undefined); // Unset the target to clean up
+        mapInstanceRef.current = null; // Clear the ref
       }
       if (mapRef.current && resizeObserver) {
         resizeObserver.unobserve(mapRef.current);
       }
     };
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
 
   // Ensure map view updates when centerState or zoomState changes
   useEffect(() => {
-    if (mapInstanceRef.current) {
+    if (mapInstanceRef.current && openLayersLoadedState) {
       const view = mapInstanceRef.current.getView();
+      // Only set center/zoom if different from current map view to avoid unnecessary updates
       if (view.getCenter() !== centerState || view.getZoom() !== zoomState) {
         view.setCenter(centerState);
         view.setZoom(zoomState);
       }
     }
-  }, [centerState, zoomState]);
+  }, [centerState, zoomState, openLayersLoadedState]);
 
+  // Effect to update map size when sidebar collapses/expands
   useEffect(() => {
     if (mapInstanceRef.current) {
       const timer = setTimeout(() => {
         mapInstanceRef.current.updateSize();
-      }, 300);
+      }, 300); // Debounce to allow CSS transition to complete
 
       return () => clearTimeout(timer);
     }
@@ -540,11 +541,8 @@ function MapComponent() {
       </header>
       <main className="app-main">
         <div className="map-wrapper">
-          <div
-            ref={mapRef}
-            className="map-container"
-            style={{ width: "100%", height: "100%" }}
-          ></div>
+          {/* REMOVED INLINE STYLE: width: '100%', height: '100%' */}
+          <div ref={mapRef} className="map-container"></div>
 
           {openLayersLoadedState && (
             <>
@@ -654,8 +652,8 @@ function MapComponent() {
                 }
               />
               <ProvinceControls
-                setCenter={setCenterState} // Not used directly, but kept for clarity if needed elsewhere
-                setZoom={setZoomState} // Not used directly, but kept for clarity if needed elsewhere
+                setCenter={setCenterState} // Not used directly in ProvinceControls anymore, but MapComponent handles view updates
+                setZoom={setZoomState} // Not used directly in ProvinceControls anymore, but MapComponent handles view updates
                 openLayersLoaded={openLayersLoadedState}
                 isSidebarCollapsed={isSidebarCollapsed}
                 isExpanded={isProvincesExpanded}

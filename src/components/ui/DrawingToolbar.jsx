@@ -98,7 +98,7 @@ const DrawingToolbar = forwardRef(
             aria-label="ລຶບຮູບແຕ້ມທັງໝົດ" // Accessibility label
           >
             <Trash2 size={18} />
-            <span className="drawing-button-text">ລຶບ</span>
+            <span className="drawing-button-text">ລຶບທັງໝົດ</span>
           </button>
         </div>
       </div>

@@ -4,7 +4,7 @@ import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
 import OSM from "ol/source/OSM";
 import XYZ from "ol/source/XYZ";
-import { fromLonLat, toLonLat } from "ol/proj";
+import { fromLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Draw, { createBox } from "ol/interaction/Draw";
@@ -55,9 +55,12 @@ function MapComponent() {
   const [isRoadLayerVisible, setIsRoadLayerVisible] = useState(false);
   const [isBuildingLayerVisible, setIsBuildingLayerVisible] = useState(false);
 
-  // States for Loading Bar (for overall first-time data load)
+  // States for Loading Bar (for overall data load)
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [dataLoadProgress, setDataLoadProgress] = useState(0);
+  // State ໃໝ່ເພື່ອຕິດຕາມຈໍານວນ Features ທີ່ໂຫຼດສຳເລັດແລ້ວ
+  const [currentLoadedFeaturesCount, setCurrentLoadedFeaturesCount] =
+    useState(0);
 
   const [toolbarPosition, setToolbarPosition] = useState({ x: 50, y: 50 });
   const [isDragging, setIsDragging] = useState(false);
@@ -69,14 +72,14 @@ function MapComponent() {
       name: "chanthabury",
       displayName: "ຈັນທະບູລີ",
       province: "VientianeCapital",
-      endpoint: "https://msmapi.up.railway.app/api/rest/chanthabury",
+      endpoint: "https://msmapi.up.railway.app/api/rest/chanthabury", // ໃຊ້ URL ເຕັມ
       dataKey: "cadastre_parcel_details_0101",
       checked: false,
-      parcels: [],
-      loading: false, // State for individual district loading status
-      error: null, // State for individual district error status
+      parcels: [], // ຈະເກັບ Features ທີ່ໂຫຼດມາແລ້ວ
+      loading: false, // ສະຖານະການໂຫຼດສໍາລັບແຕ່ລະເມືອງ
+      error: null, // ສະຖານະ error ສໍາລັບແຕ່ລະເມືອງ
       color: "#3388ff",
-      hasLoaded: false, // State to track if data for this district has ever been loaded
+      hasLoaded: false, // ສະຖານະວ່າຂໍ້ມູນສຳລັບເມືອງນີ້ເຄີຍຖືກໂຫຼດສຳເລັດແລ້ວຫຼືຍັງ
     },
     {
       name: "sikodtabong",
@@ -195,6 +198,7 @@ function MapComponent() {
       );
       return updatedDistricts;
     });
+    // ອັບເດດເມືອງທີ່ຖືກເລືອກສໍາລັບຊັ້ນຂໍ້ມູນສິ່ງປຸກສ້າງ
     setSelectedDistrictForBuildings(districtName);
   }, []);
 
@@ -222,6 +226,7 @@ function MapComponent() {
     let map;
     let resizeObserver;
 
+    // ຖ້າ map instance ມີຢູ່ແລ້ວ, ພຽງແຕ່ກໍານົດ target ແລະ update size
     if (mapInstanceRef.current) {
       if (mapRef.current) {
         mapInstanceRef.current.setTarget(mapRef.current);
@@ -287,11 +292,20 @@ function MapComponent() {
 
       map.updateSize();
 
+      // ຕັ້ງຄ່າ visibility ເບື້ອງຕົ້ນສໍາລັບ base maps
       map.getLayers().forEach((layer) => {
         if (layer.get("name") === selectedBaseMap) {
           layer.setVisible(true);
         } else {
-          layer.setVisible(false);
+          // ປິດ layer ອື່ນໆ, ແຕ່ບໍ່ປິດ layer ຂໍ້ມູນ ຫຼື layer ການແຕ້ມ
+          if (
+            !layer.get("name").startsWith("parcel_layer_") &&
+            layer.get("name") !== "drawing_layer" &&
+            layer.get("name") !== "road_layer" &&
+            layer.get("name") !== "building_layer"
+          ) {
+            layer.setVisible(false);
+          }
         }
       });
 
@@ -302,6 +316,7 @@ function MapComponent() {
         setZoomState(map.getView().getZoom());
       });
 
+      // ໃຊ້ ResizeObserver ເພື່ອ update map size ເມື່ອ container ປ່ຽນຂະໜາດ
       resizeObserver = new ResizeObserver(() => {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.updateSize();
@@ -316,17 +331,19 @@ function MapComponent() {
 
     initOpenLayersMap();
 
+    // Cleanup function
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(undefined);
-        mapInstanceRef.current = null;
+        mapInstanceRef.current.setTarget(undefined); // Unset map target
+        mapInstanceRef.current = null; // Clear map instance
       }
       if (mapRef.current && resizeObserver) {
-        resizeObserver.unobserve(mapRef.current);
+        resizeObserver.unobserve(mapRef.current); // Disconnect observer
       }
     };
-  }, []);
+  }, []); // Empty dependency array means this effect runs once on mount
 
+  // Effect to update map view when centerState or zoomState changes
   useEffect(() => {
     if (mapInstanceRef.current && openLayersLoadedState) {
       const view = mapInstanceRef.current.getView();
@@ -337,16 +354,18 @@ function MapComponent() {
     }
   }, [centerState, zoomState, openLayersLoadedState]);
 
+  // Effect to update map size when sidebar collapses/expands
   useEffect(() => {
     if (mapInstanceRef.current) {
       const timer = setTimeout(() => {
         mapInstanceRef.current.updateSize();
-      }, 300);
+      }, 300); // ໃຫ້ເວລາ sidebar ເຮັດ animation
 
       return () => clearTimeout(timer);
     }
   }, [isSidebarCollapsed]);
 
+  // Effect for drawing interactions
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
@@ -356,6 +375,7 @@ function MapComponent() {
       .getArray()
       .find((l) => l.get("name") === "drawing_layer");
 
+    // ສ້າງ layer ການແຕ້ມຖ້າຍັງບໍ່ມີ
     if (!vectorLayer) {
       vectorLayer = new VectorLayer({
         source: vectorSourceRef.current,
@@ -379,11 +399,13 @@ function MapComponent() {
       map.addLayer(vectorLayer);
     }
 
+    // ລຶບ interaction ການແຕ້ມເດີມອອກຖ້າມີ
     if (drawRef.current) {
       map.removeInteraction(drawRef.current);
       drawRef.current = null;
     }
 
+    // ເພີ່ມ interaction ການແຕ້ມໃໝ່ຕາມໂໝດທີ່ຖືກເລືອກ
     if (drawingMode) {
       let drawInteraction;
       switch (drawingMode) {
@@ -399,7 +421,7 @@ function MapComponent() {
         case "Box":
           drawInteraction = new Draw({
             source: vectorSourceRef.current,
-            type: "Circle",
+            type: "Circle", // ໃຊ້ Circle type ແຕ່ມີ geometryFunction ເພື່ອສ້າງ Box
             geometryFunction: createBox(),
           });
           break;
@@ -414,9 +436,10 @@ function MapComponent() {
   }, [drawingMode]);
 
   const clearDrawing = () => {
-    vectorSourceRef.current.clear();
+    vectorSourceRef.current.clear(); // ລຶບ Features ທັງໝົດຈາກ source ການແຕ້ມ
   };
 
+  // Logic ສໍາລັບການລາກ Drawing Toolbar (Mouse Events)
   const handleMouseDown = useCallback((e) => {
     setIsDragging(true);
     const rect = toolbarRef.current.getBoundingClientRect();
@@ -436,6 +459,7 @@ function MapComponent() {
       const toolbarWidth = toolbarRef.current.offsetWidth;
       const toolbarHeight = toolbarRef.current.offsetHeight;
 
+      // ປ້ອງກັນບໍ່ໃຫ້ Toolbar ອອກນອກຂອບເຂດແຜນທີ່
       newX = Math.max(0, Math.min(newX, mapRect.width - toolbarWidth));
       newY = Math.max(0, Math.min(newY, mapRect.height - toolbarHeight));
 
@@ -463,6 +487,7 @@ function MapComponent() {
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
+  // Logic ສໍາລັບການລາກ Drawing Toolbar (Touch Events)
   const handleTouchStart = useCallback((e) => {
     if (e.touches.length === 1) {
       setIsDragging(true);
@@ -471,7 +496,7 @@ function MapComponent() {
         x: e.touches[0].clientX - rect.left,
         y: e.touches[0].clientY - rect.top,
       };
-      e.preventDefault();
+      e.preventDefault(); // ປ້ອງກັນການ scroll ຂອງ Browser
     }
   }, []);
 
@@ -489,7 +514,7 @@ function MapComponent() {
       newY = Math.max(0, Math.min(newY, mapRect.height - toolbarHeight));
 
       setToolbarPosition({ x: newX, y: newY });
-      e.preventDefault();
+      e.preventDefault(); // ປ້ອງກັນການ scroll ຂອງ Browser
     },
     [isDragging]
   );
@@ -512,17 +537,17 @@ function MapComponent() {
     };
   }, [isDragging, handleTouchMove, handleTouchEnd]);
 
-  // Effect to update overall loading status and progress
+  // Effect ເພື່ອອັບເດດສະຖານະການໂຫຼດໂດຍລວມ ແລະ ເປີເຊັນຄວາມສຳເລັດ
   useEffect(() => {
-    // Filter for districts that are currently checked and are actively loading (loading: true)
+    // ກັ່ນຕອງຫາເມືອງທີ່ຖືກ Check ແລະກຳລັງໂຫຼດຢູ່
     const activelyLoadingDistricts = districts.filter(
       (d) => d.checked && d.loading
     );
 
-    // Determine if any district is actively loading
+    // ກໍານົດວ່າຄວນສະແດງ LoadingBar ບໍ່
     const shouldShowLoadingBar = activelyLoadingDistricts.length > 0;
 
-    // Calculate progress based on ALL checked districts, how many have *finished* loading.
+    // ຄິດໄລ່ເປີເຊັນຄວາມສຳເລັດໂດຍອີງໃສ່ທຸກເມືອງທີ່ຖືກ Check, ວ່າມີຈັກເມືອງທີ່ໂຫຼດສຳເລັດແລ້ວ
     const allCheckedDistricts = districts.filter((d) => d.checked);
     const completedCheckedDistricts = allCheckedDistricts.filter(
       (d) => d.hasLoaded
@@ -536,22 +561,33 @@ function MapComponent() {
       );
     }
 
-    // Set global loading state
+    // ຄິດໄລ່ຈໍານວນ Features ທັງໝົດທີ່ໂຫຼດສຳເລັດ
+    let totalFeaturesLoadedCount = 0;
+    allCheckedDistricts.forEach((d) => {
+      if (d.hasLoaded && d.parcels) {
+        totalFeaturesLoadedCount += d.parcels.length;
+      }
+    });
+
+    // ຕັ້ງຄ່າສະຖານະການໂຫຼດໂດຍລວມ
     setIsLoadingData(shouldShowLoadingBar);
     setDataLoadProgress(progress);
+    setCurrentLoadedFeaturesCount(totalFeaturesLoadedCount);
 
-    // If no districts are actively loading, but some checked ones were recently loaded
-    // ensure progress hits 100% and then hide with a delay
+    // ຖ້າບໍ່ມີເມືອງໃດກຳລັງໂຫຼດຢູ່, ແຕ່ມີບາງເມືອງທີ່ຖືກ Check ໄດ້ໂຫຼດສຳເລັດແລ້ວ
+    // ໃຫ້ສະແດງ 100% ສອງສາມວິນາທີ ແລ້ວເຊື່ອງ
     if (!shouldShowLoadingBar && totalCheckedCount > 0 && progress === 100) {
       const timer = setTimeout(() => {
         setIsLoadingData(false);
         setDataLoadProgress(0);
-      }, 500); // Display 100% for 0.5s
+        setCurrentLoadedFeaturesCount(0); // Reset count when hidden
+      }, 500); // ສະແດງ 100% 0.5 ວິນາທີ
       return () => clearTimeout(timer);
     } else if (totalCheckedCount === 0 && isLoadingData) {
-      // If all unchecked and bar is showing, hide it immediately
+      // ຖ້າບໍ່ມີເມືອງໃດຖືກ Check ແລ້ວ LoadingBar ຍັງສະແດງຢູ່, ໃຫ້ເຊື່ອງທັນທີ
       setIsLoadingData(false);
       setDataLoadProgress(0);
+      setCurrentLoadedFeaturesCount(0); // Reset count when hidden
     }
   }, [districts, isLoadingData, dataLoadProgress]);
 
@@ -569,9 +605,11 @@ function MapComponent() {
 
           {openLayersLoadedState && (
             <>
+              {/* Loading Bar - ຈະສະແດງຢູ່ເທິງສຸດຂອງແຜນທີ່ */}
               <LoadingBar
                 isLoading={isLoadingData}
                 loadingProgress={dataLoadProgress}
+                loadedFeaturesCount={currentLoadedFeaturesCount} // ສົ່ງຈໍານວນ Features ທີ່ໂຫຼດແລ້ວ
               />
               <BaseMapSwitcher
                 map={mapInstanceRef.current}

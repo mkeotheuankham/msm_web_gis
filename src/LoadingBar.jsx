@@ -1,7 +1,7 @@
 import React from "react";
 import LinearProgress from "@mui/material/LinearProgress";
 
-const LoadingBar = ({ isLoading, loadingProgress }) => {
+const LoadingBar = ({ isLoading, loadingProgress, loadedFeaturesCount }) => {
   if (!isLoading) return null;
 
   return (
@@ -30,7 +30,7 @@ const LoadingBar = ({ isLoading, loadingProgress }) => {
           color: "#fff",
         }}
       >
-        ກຳລັງໂຫຼດຂໍ້ມູນ... {loadingProgress}%
+        ກຳລັງໂຫຼດຂໍ້ມູນ... {loadedFeaturesCount} ລາຍການ ({loadingProgress}%)
       </div>
     </div>
   );

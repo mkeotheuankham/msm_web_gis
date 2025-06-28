@@ -630,6 +630,359 @@ body,
   }
 }
 
+/* Parcel Info Panel Styles */
+.parcel-info-panel {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 300px;
+  max-height: 80vh;
+  background: rgba(30, 30, 30, 0.9);
+  border-radius: 8px;
+  padding: 1rem;
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+}
+
+.parcel-info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.parcel-info-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #eee;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #eee;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 4px;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.parcel-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #ccc;
+}
+
+.info-value {
+  text-align: right;
+  max-width: 60%;
+  word-break: break-word;
+}
+
+/* Coordinate Bar Styles */
+.coordinate-bar {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 1000;
+  background-color: var(--color-map-overlay-bg);
+  color: var(--color-text-light);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--color-shadow-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-direction: column; /* Start as column for compact view */
+  align-items: flex-end; /* Align content to the right */
+  width: auto; /* Allow width to adjust */
+}
+
+.coordinate-bar.expanded {
+  width: 280px; /* Fixed width when expanded */
+  align-items: stretch; /* Stretch items horizontally */
+}
+
+.coordinate-main-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%; /* Take full width when expanded */
+  justify-content: flex-end; /* Align to end by default */
+}
+
+.coordinate-bar.expanded .coordinate-main-display {
+  justify-content: flex-start; /* Align to start when expanded */
+}
+
+.coordinate-display-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1; /* Allow text to take available space */
+  text-align: right;
+}
+
+.coordinate-bar.expanded .coordinate-display-text {
+  text-align: left; /* Align text to left when expanded */
+}
+
+.copy-status {
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-success-green);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  animation: fadeOut 2s forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.coordinate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border-light);
+  margin-top: 5px;
+}
+
+.coordinate-actions .action-button {
+  background-color: var(--color-accent-blue);
+  color: var(--color-text-light);
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.coordinate-actions .action-button:hover {
+  background-color: var(--color-accent-blue-hover);
+}
+
+.coordinate-history-panel {
+  position: absolute;
+  bottom: 0; /* Align to the bottom of its parent (.coordinate-bar) */
+  right: 0;
+  background-color: var(--color-secondary-bg);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--color-shadow-dark);
+  padding: 0.8rem;
+  width: 280px; /* Match expanded bar width */
+  max-height: 200px;
+  overflow-y: auto;
+  transform: translateY(100%); /* Start hidden below the bar */
+  transition: transform 0.3s ease-out;
+  z-index: 999; /* Below the main bar */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border-light);
+}
+
+.coordinate-bar.expanded .coordinate-history-panel {
+  transform: translateY(
+    calc(-100% - 10px)
+  ); /* Move up above the bar + small gap */
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.close-history-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-light);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.close-history-btn:hover {
+  color: var(--color-error-red);
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.history-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.history-item-actions button {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-text-light);
+  transition: background-color 0.2s ease;
+}
+
+.history-item-actions button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.history-item-actions .remove-btn {
+  background-color: rgba(214, 48, 49, 0.6);
+}
+.history-item-actions .remove-btn:hover {
+  background-color: rgba(214, 48, 49, 0.8);
+}
+
+.empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  padding: 10px;
+}
+
+/* Parcel Loading and Error Status */
+.parcel-loading-status {
+  position: absolute;
+  bottom: 60px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.loading-spinner {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 2px solid #fff;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.parcel-error-status {
+  /* ປ່ຽນຈາກ .parcel-errors ເປັນ .parcel-error-status */
+  position: absolute;
+  bottom: 100px;
+  left: 10px;
+  background: var(--color-error-red); /* ໃຊ້ variable */
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  z-index: 1000;
+  max-width: 300px;
+}
+
+.parcel-error-status .error-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.parcel-error-status .error-item {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85em;
+}
+
+.parcel-error-status .retry-button {
+  background-color: var(--color-accent-blue);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: background-color 0.2s ease;
+}
+
+.parcel-error-status .retry-button:hover {
+  background-color: var(--color-accent-blue-hover);
+}
+
 /* --- Responsive Styles --- */
 @media (max-width: 768px) {
   .app-main {

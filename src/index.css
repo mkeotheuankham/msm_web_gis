@@ -346,6 +346,14 @@ body,
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  /* Ensure label takes full width and justifies content for items like loader/error */
+  width: 100%;
+  justify-content: space-between;
+}
+
+.district-item label span {
+  /* Prevent text from shrinking */
+  flex-shrink: 0;
 }
 
 .district-color {
@@ -353,6 +361,7 @@ body,
   height: 16px;
   border-radius: 3px;
   display: inline-block;
+  flex-shrink: 0; /* Prevent color box from shrinking */
 }
 
 .district-selector .district-grid {
@@ -605,6 +614,20 @@ body,
   width: 16px;
   height: 16px;
   cursor: pointer;
+}
+
+/* Add spinning animation for Loader2 icon */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* --- Responsive Styles --- */

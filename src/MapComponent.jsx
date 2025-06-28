@@ -25,6 +25,7 @@ import ParcelInfoPanel from "./components/ui/ParcelInfoPanel";
 import DistrictSelector from "./components/ui/DistrictSelector";
 import RoadLayer from "./components/map/RoadLayer";
 import BuildingLayer from "./components/map/BuildingLayer";
+import LoadingBar from "./LoadingBar"; // ນໍາເຂົ້າ LoadingBar
 
 import { PanelLeft, PanelRight } from "lucide-react";
 
@@ -44,11 +45,8 @@ function MapComponent() {
   const [isDistrictsExpanded, setIsDistrictsExpanded] = useState(true);
   const [isProvincesExpanded, setIsProvincesExpanded] = useState(true);
 
-  // Province selected for displaying districts in DistrictSelector
   const [selectedProvinceForDistricts, setSelectedProvinceForDistricts] =
     useState(null);
-
-  // States for road and building layer filtering
   const [selectedProvinceForRoads, setSelectedProvinceForRoads] =
     useState(null);
   const [selectedDistrictForBuildings, setSelectedDistrictForBuildings] =
@@ -57,26 +55,28 @@ function MapComponent() {
   const [isRoadLayerVisible, setIsRoadLayerVisible] = useState(false);
   const [isBuildingLayerVisible, setIsBuildingLayerVisible] = useState(false);
 
+  // States for Loading Bar (for overall first-time data load)
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [dataLoadProgress, setDataLoadProgress] = useState(0);
+
   const [toolbarPosition, setToolbarPosition] = useState({ x: 50, y: 50 });
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const toolbarRef = useRef(null);
 
   const [districts, setDistricts] = useState([
-    // !!! ສໍາຄັນ: ຊື່ແຂວງໃນນີ້ (province) ຕ້ອງກົງກັບ "name" ໃນ provinces array ຂອງ ProvinceControls !!!
-    // ຖ້າທ່ານມີຂໍ້ມູນເມືອງສໍາລັບແຂວງອື່ນ, ໃຫ້ເພີ່ມຢູ່ລຸ່ມນີ້
     {
       name: "chanthabury",
       displayName: "ຈັນທະບູລີ",
-      province: "VientianeCapital", // ຕ້ອງກົງກັບ province.name ໃນ ProvinceControls
+      province: "VientianeCapital",
       endpoint: "https://msmapi.up.railway.app/api/rest/chanthabury",
       dataKey: "cadastre_parcel_details_0101",
       checked: false,
       parcels: [],
-      loading: false,
-      error: null,
+      loading: false, // State for individual district loading status
+      error: null, // State for individual district error status
       color: "#3388ff",
-      hasLoaded: false,
+      hasLoaded: false, // State to track if data for this district has ever been loaded
     },
     {
       name: "sikodtabong",
@@ -182,17 +182,6 @@ function MapComponent() {
       color: "#8c33ff",
       hasLoaded: false,
     },
-    // Example for Luang Prabang districts - You need to add actual district data here
-    /*
-    {
-      name: "luangprabang_city",
-      displayName: "ເມືອງຫຼວງພະບາງ",
-      province: "LuangPrabang",
-      endpoint: "YOUR_LUANGPRABANG_CITY_API",
-      dataKey: "luangprabang_city_parcels",
-      checked: false, parcels: [], loading: false, error: null, color: "#AAAAAA", hasLoaded: false,
-    },
-    */
   ]);
 
   const toggleSidebar = () => {
@@ -200,31 +189,30 @@ function MapComponent() {
   };
 
   const toggleDistrict = useCallback((districtName) => {
-    setDistricts((prevDistricts) =>
-      prevDistricts.map((d) =>
+    setDistricts((prevDistricts) => {
+      const updatedDistricts = prevDistricts.map((d) =>
         d.name === districtName ? { ...d, checked: !d.checked } : d
-      )
-    );
+      );
+      return updatedDistricts;
+    });
     setSelectedDistrictForBuildings(districtName);
   }, []);
 
-  // Handler for when a province button is clicked in ProvinceControls
   const handleProvinceSelectionForMap = useCallback(
     (coords, zoom, provinceName) => {
       if (mapInstanceRef.current && openLayersLoadedState) {
-        // Check if map is loaded
-        mapInstanceRef.current.getView().setCenter(coords); // Use direct coords (fromLonLat already applied in ProvinceControls)
+        mapInstanceRef.current.getView().setCenter(coords);
         mapInstanceRef.current.getView().setZoom(zoom);
-        setCenterState(coords); // Update local state for consistency
-        setZoomState(zoom); // Update local state for consistency
+        setCenterState(coords);
+        setZoomState(zoom);
       } else {
         console.warn("Map not loaded or ready to move yet.");
       }
-      setSelectedProvinceForDistricts(provinceName); // For parcel layer districts
-      setSelectedProvinceForRoads(provinceName); // For road layer filtering
+      setSelectedProvinceForDistricts(provinceName);
+      setSelectedProvinceForRoads(provinceName);
     },
     [openLayersLoadedState]
-  ); // Depend on openLayersLoadedState
+  );
 
   const handleDistrictSelectionForBuildings = useCallback((districtName) => {
     setSelectedDistrictForBuildings(districtName);
@@ -234,9 +222,7 @@ function MapComponent() {
     let map;
     let resizeObserver;
 
-    // Only initialize map if it hasn't been initialized yet
     if (mapInstanceRef.current) {
-      // If map is already initialized, just ensure it's targeting the correct element and sized
       if (mapRef.current) {
         mapInstanceRef.current.setTarget(mapRef.current);
         mapInstanceRef.current.updateSize();
@@ -245,7 +231,6 @@ function MapComponent() {
     }
 
     const initOpenLayersMap = () => {
-      // Check for dimensions before initializing the map
       if (
         !mapRef.current ||
         mapRef.current.clientWidth === 0 ||
@@ -266,7 +251,7 @@ function MapComponent() {
       const googleSatLayer = new TileLayer({
         source: new XYZ({
           url: "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
-          maxZoom: 20, // Keep this as 20 as Google Satellite does not support higher zoom
+          maxZoom: 20,
         }),
         properties: { name: "Google Satellite" },
         visible: false,
@@ -275,7 +260,7 @@ function MapComponent() {
       const googleHybridLayer = new TileLayer({
         source: new XYZ({
           url: "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
-          maxZoom: 20, // Keep this as 20 as Google Hybrid does not support higher zoom
+          maxZoom: 20,
         }),
         properties: { name: "Google Hybrid" },
         visible: false,
@@ -285,7 +270,7 @@ function MapComponent() {
         center: centerState,
         zoom: zoomState,
         minZoom: 2,
-        maxZoom: 22, // Adjusted maxZoom for the map (can go higher than default 20)
+        maxZoom: 22,
       });
 
       map = new Map({
@@ -298,9 +283,9 @@ function MapComponent() {
       });
 
       mapInstanceRef.current = map;
-      setOpenLayersLoadedState(true); // Set to true once map is initialized
+      setOpenLayersLoadedState(true);
 
-      map.updateSize(); // Force an update size after initialization
+      map.updateSize();
 
       map.getLayers().forEach((layer) => {
         if (layer.get("name") === selectedBaseMap) {
@@ -317,7 +302,6 @@ function MapComponent() {
         setZoomState(map.getView().getZoom());
       });
 
-      // Observe map container for size changes
       resizeObserver = new ResizeObserver(() => {
         if (mapInstanceRef.current) {
           mapInstanceRef.current.updateSize();
@@ -334,20 +318,18 @@ function MapComponent() {
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(undefined); // Unset the target to clean up
-        mapInstanceRef.current = null; // Clear the ref
+        mapInstanceRef.current.setTarget(undefined);
+        mapInstanceRef.current = null;
       }
       if (mapRef.current && resizeObserver) {
         resizeObserver.unobserve(mapRef.current);
       }
     };
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
-  // Ensure map view updates when centerState or zoomState changes
   useEffect(() => {
     if (mapInstanceRef.current && openLayersLoadedState) {
       const view = mapInstanceRef.current.getView();
-      // Only set center/zoom if different from current map view to avoid unnecessary updates
       if (view.getCenter() !== centerState || view.getZoom() !== zoomState) {
         view.setCenter(centerState);
         view.setZoom(zoomState);
@@ -355,12 +337,11 @@ function MapComponent() {
     }
   }, [centerState, zoomState, openLayersLoadedState]);
 
-  // Effect to update map size when sidebar collapses/expands
   useEffect(() => {
     if (mapInstanceRef.current) {
       const timer = setTimeout(() => {
         mapInstanceRef.current.updateSize();
-      }, 300); // Debounce to allow CSS transition to complete
+      }, 300);
 
       return () => clearTimeout(timer);
     }
@@ -531,6 +512,49 @@ function MapComponent() {
     };
   }, [isDragging, handleTouchMove, handleTouchEnd]);
 
+  // Effect to update overall loading status and progress
+  useEffect(() => {
+    // Filter for districts that are currently checked and are actively loading (loading: true)
+    const activelyLoadingDistricts = districts.filter(
+      (d) => d.checked && d.loading
+    );
+
+    // Determine if any district is actively loading
+    const shouldShowLoadingBar = activelyLoadingDistricts.length > 0;
+
+    // Calculate progress based on ALL checked districts, how many have *finished* loading.
+    const allCheckedDistricts = districts.filter((d) => d.checked);
+    const completedCheckedDistricts = allCheckedDistricts.filter(
+      (d) => d.hasLoaded
+    ).length;
+    const totalCheckedCount = allCheckedDistricts.length;
+
+    let progress = 0;
+    if (totalCheckedCount > 0) {
+      progress = Math.floor(
+        (completedCheckedDistricts / totalCheckedCount) * 100
+      );
+    }
+
+    // Set global loading state
+    setIsLoadingData(shouldShowLoadingBar);
+    setDataLoadProgress(progress);
+
+    // If no districts are actively loading, but some checked ones were recently loaded
+    // ensure progress hits 100% and then hide with a delay
+    if (!shouldShowLoadingBar && totalCheckedCount > 0 && progress === 100) {
+      const timer = setTimeout(() => {
+        setIsLoadingData(false);
+        setDataLoadProgress(0);
+      }, 500); // Display 100% for 0.5s
+      return () => clearTimeout(timer);
+    } else if (totalCheckedCount === 0 && isLoadingData) {
+      // If all unchecked and bar is showing, hide it immediately
+      setIsLoadingData(false);
+      setDataLoadProgress(0);
+    }
+  }, [districts, isLoadingData, dataLoadProgress]);
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -541,11 +565,14 @@ function MapComponent() {
       </header>
       <main className="app-main">
         <div className="map-wrapper">
-          {/* REMOVED INLINE STYLE: width: '100%', height: '100%' */}
           <div ref={mapRef} className="map-container"></div>
 
           {openLayersLoadedState && (
             <>
+              <LoadingBar
+                isLoading={isLoadingData}
+                loadingProgress={dataLoadProgress}
+              />
               <BaseMapSwitcher
                 map={mapInstanceRef.current}
                 selectedBaseMap={selectedBaseMap}
@@ -652,15 +679,15 @@ function MapComponent() {
                 }
               />
               <ProvinceControls
-                setCenter={setCenterState} // Not used directly in ProvinceControls anymore, but MapComponent handles view updates
-                setZoom={setZoomState} // Not used directly in ProvinceControls anymore, but MapComponent handles view updates
+                setCenter={setCenterState}
+                setZoom={setZoomState}
                 openLayersLoaded={openLayersLoadedState}
                 isSidebarCollapsed={isSidebarCollapsed}
                 isExpanded={isProvincesExpanded}
                 onToggleExpansion={() =>
                   setIsProvincesExpanded(!isProvincesExpanded)
                 }
-                onProvinceSelectForMap={handleProvinceSelectionForMap} // Pass the handler
+                onProvinceSelectForMap={handleProvinceSelectionForMap}
               />
               <div className="footer">&copy; 2025 Web Mapping Application</div>
             </>

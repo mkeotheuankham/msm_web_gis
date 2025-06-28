@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, AlertCircle } from "lucide-react"; // ນໍາເຂົ້າ icons
 
 const DistrictSelector = ({
   districts,
@@ -47,10 +47,16 @@ const DistrictSelector = ({
                     <input
                       type="checkbox"
                       checked={district.checked}
-                      onChange={() => handleDistrictToggle(district.name)} // Use the new handler
+                      onChange={() => handleDistrictToggle(district.name)}
                       style={{ accentColor: district.color }}
                     />
-                    <>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
                       <span
                         className="district-color"
                         style={{ backgroundColor: district.color }}
@@ -58,7 +64,31 @@ const DistrictSelector = ({
                       <span className="district-name">
                         {district.displayName}
                       </span>
-                    </>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        marginLeft: "auto",
+                      }}
+                    >
+                      {" "}
+                      {/* Added wrapper for icons */}
+                      {district.loading && ( // ສະແດງ loader ຖ້າກຳລັງໂຫຼດ
+                        <Loader2
+                          size={16}
+                          className="animate-spin text-blue-400 ml-2"
+                          title="ກຳລັງໂຫຼດ..."
+                        />
+                      )}
+                      {district.error && ( // ສະແດງ error icon ຖ້າມີຂໍ້ຜິດພາດ
+                        <AlertCircle
+                          size={16}
+                          className="text-red-500 ml-2"
+                          title={`ຂໍ້ຜິດພາດ: ${district.error}`}
+                        />
+                      )}
+                    </div>
                   </label>
                 </div>
               ))

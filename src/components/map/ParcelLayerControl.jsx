@@ -34,9 +34,7 @@ const getParcelStyle = (feature, resolution) => {
   ];
 
   // ສະແດງຊື່ parcelno ຖ້າ zoom ເຂົ້າໄປໃກ້ພໍ
-  // ປັບຄ່າ resolution ໃຫ້ສະແດງຂໍ້ຄວາມສະເພາະເມື່ອຊູມໃກ້ຫຼາຍຂຶ້ນ ເພື່ອປະສິດທິພາບ
   if (resolution < 5) {
-    // ປັບຄ່າຈາກ 50 ເປັນ 5
     styles.push(
       new Style({
         text: new Text({
@@ -63,18 +61,22 @@ const ParcelLayerControl = ({
 }) => {
   const layersRef = useRef({});
   const clickKeyRef = useRef(null);
-  const [loadingDistricts, setLoadingDistricts] = useState([]);
-  const [errors, setErrors] = useState({});
 
+  // loadParcelData is responsible for fetching and processing data for a district
   const loadParcelData = useCallback(
-    async (district) => {
+    async (districtToLoad) => {
+      // Set loading state for this specific district
+      setDistricts((prevDistricts) =>
+        prevDistricts.map((d) =>
+          d.name === districtToLoad.name
+            ? { ...d, loading: true, error: null }
+            : d
+        )
+      );
+
       try {
-        setLoadingDistricts((prev) => [...prev, district.displayName]); // ໃຊ້ displayName ສໍາລັບການສະແດງຜົນ
-        setErrors((prev) => ({ ...prev, [district.name]: null })); // ເຄລຍ error ເມື່ອເລີ່ມໂຫຼດ
-
-        const url = district.endpoint;
-
-        console.log(`Fetching data from: ${url}`); // ເພີ່ມ logging ເພື່ອເບິ່ງ URL
+        const url = districtToLoad.endpoint;
+        console.log(`Fetching data from: ${url}`);
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -82,83 +84,130 @@ const ParcelLayerControl = ({
         }
 
         const rawData = await response.json();
-        console.log(`API Raw Data for ${district.name}:`, rawData); // ເພີ່ມ logging ເພື່ອເບິ່ງໂຄງສ້າງຂໍ້ມູນດິບ
-
-        // ກວດສອບໂຄງສ້າງຂໍ້ມູນ ແລະດຶງ array ຂອງ parcels ອອກມາໂດຍໃຊ້ district.dataKey
-        const parcelsArray = rawData[district.dataKey];
+        const parcelsArray = rawData[districtToLoad.dataKey];
 
         if (!parcelsArray || !Array.isArray(parcelsArray)) {
           throw new Error(
-            `Invalid data format: '${district.dataKey}' array not found or invalid.`
+            `Invalid data format: '${districtToLoad.dataKey}' array not found or invalid.`
           );
         }
 
         const features = [];
-        const geoJsonFormat = new GeoJSON(); // ສ້າງ GeoJSON formatter ຄັ້ງດຽວ
+        const geoJsonFormat = new GeoJSON();
 
         parcelsArray.forEach((item) => {
           if (item.geom && item.geom.coordinates) {
-            // ສ້າງ GeoJSON Feature object ຕາມມາດຕະຖານ
             const geoJsonFeature = {
               type: "Feature",
-              geometry: item.geom, // ໃຊ້ item.geom ໂດຍກົງ ເພາະມັນເປັນ GeoJSON geometry ແລ້ວ
+              geometry: item.geom,
               properties: {
-                // ເອົາ properties ທັງໝົດຈາກ item ໂດຍກົງ
                 ...item,
-                // ລົບ geometry field ອອກຈາກ properties ເພື່ອບໍ່ໃຫ້ຊ້ຳຊ້ອນ
                 geom: undefined,
-                centroid_coordinates: undefined, // ລົບ centroid_coordinates ອອກຈາກ properties ຖ້າບໍ່ຈຳເປັນ
-                // ເພີ່ມຂໍ້ມູນເພີ່ມເຕີມທີ່ຈຳເປັນສຳລັບການສະແດງຜົນ ຫຼື filter ຖ້າບໍ່ມີໃນ API
-                district_lao: item.district_lao || district.displayName, // ໃຊ້ district_lao ຈາກ API, ຖ້າບໍ່ມີໃຊ້ displayName
-                color: district.color, // ໃຊ້ color ຈາກ district object
+                centroid_coordinates: undefined,
+                district_lao: item.district_lao || districtToLoad.displayName,
+                color: districtToLoad.color,
+                cadastre_parcel_id:
+                  item.cadastre_parcel_id ||
+                  (item.cadastremapno && item.parcelno
+                    ? `${item.cadastremapno}-${item.parcelno}`
+                    : undefined),
               },
             };
-            // ໃຊ້ readFeature ເພື່ອປ່ຽນ GeoJSON feature object ໃຫ້ເປັນ OpenLayers Feature
-            features.push(
-              geoJsonFormat.readFeature(geoJsonFeature, {
-                dataProjection: "EPSG:4326", // ຂໍ້ມູນ GeoJSON ຂອງເຈົ້າຢູ່ໃນ WGS84
-                featureProjection: "EPSG:3857", // ແຜນທີ່ຂອງ OpenLayers ໃຊ້ Web Mercator
-              })
+            try {
+              const olFeature = geoJsonFormat.readFeature(geoJsonFeature, {
+                dataProjection: "EPSG:4326",
+                featureProjection: "EPSG:3857",
+              });
+              features.push(olFeature);
+            } catch (geojsonError) {
+              console.error(
+                `Failed to read GeoJSON feature for ${
+                  districtToLoad.displayName
+                } at parcelno ${item.parcelno || "N/A"}:`,
+                geoJsonFeature,
+                geojsonError
+              );
+            }
+          } else {
+            console.warn(
+              `Skipping malformed or incomplete item for ${
+                districtToLoad.displayName
+              } (gid: ${item.gid || "N/A"}):`,
+              item
             );
           }
         });
 
-        // ສ້າງ VectorSource ຈາກ features
-        const source = new VectorSource({
-          features: features,
-        });
-
-        // ສ້າງ VectorLayer
+        const source = new VectorSource({ features: features });
         const layer = new VectorLayer({
           source: source,
-          style: getParcelStyle, // ໃຊ້ຟັງຊັນ style ທີ່ເຮົາກຳນົດໄວ້
+          style: getParcelStyle,
           properties: {
-            name: `parcel_layer_${district.name}`,
-            district: district.name,
+            name: `parcel_layer_${districtToLoad.name}`,
+            district: districtToLoad.name,
           },
+          zIndex: 10,
         });
 
-        layersRef.current[district.name] = layer;
+        layersRef.current[districtToLoad.name] = layer;
         map.addLayer(layer);
 
-        // ອັບເດດສະຖານະການໂຫຼດ
-        setLoadingDistricts(
-          (prev) => prev.filter((dName) => dName !== district.displayName) // ໃຊ້ displayName
+        console.log(
+          `Added ${features.length} parcels for ${districtToLoad.displayName}.`
+        );
+
+        // Update district state after successful load
+        setDistricts((prevDistricts) =>
+          prevDistricts.map((d) =>
+            d.name === districtToLoad.name
+              ? {
+                  ...d,
+                  parcels: features,
+                  loading: false,
+                  hasLoaded: true,
+                  error: null,
+                }
+              : d
+          )
         );
       } catch (error) {
         console.error(
-          `Error loading parcel data for ${district.displayName}:`,
+          `Error loading parcel data for ${districtToLoad.displayName}:`,
           error
         );
-        setErrors((prev) => ({ ...prev, [district.name]: error.message }));
-        setLoadingDistricts(
-          (prev) => prev.filter((dName) => dName !== district.displayName) // ໃຊ້ displayName
+        const errorMessage = error.message.includes("HTTP error!")
+          ? `ການເຊື່ອມຕໍ່ API ມີບັນຫາ: ${error.message}`
+          : `ຂໍ້ມູນບໍ່ຖືກຕ້ອງ: ${error.message}`;
+
+        // Update district state with error
+        setDistricts((prevDistricts) =>
+          prevDistricts.map((d) =>
+            d.name === districtToLoad.name
+              ? { ...d, error: errorMessage, loading: false, hasLoaded: false }
+              : d
+          )
         );
       }
     },
-    [map] // ປັບ dependencies ໃຫ້ເຫມາະສົມ
+    [map, setDistricts]
   );
 
+  // Effect to trigger data fetching when a district is checked
+  useEffect(() => {
+    districts.forEach((district) => {
+      // If district is checked, hasn't loaded yet, isn't currently loading, and has an endpoint
+      if (
+        district.checked &&
+        !district.hasLoaded &&
+        !district.loading &&
+        district.endpoint
+      ) {
+        loadParcelData(district);
+      }
+    });
+  }, [districts, loadParcelData]);
+
+  // Setup map click handler for parcel selection
   const setupClickHandler = useCallback(() => {
     if (!map) return;
 
@@ -167,118 +216,139 @@ const ParcelLayerControl = ({
     }
 
     clickKeyRef.current = map.on("singleclick", async (evt) => {
-      let selectedParcel = null;
+      let selectedParcelFeature = null;
+
       map.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
-        // ໃຫ້ແນ່ໃຈວ່າຄລິກຖືກ layer ຂອງ parcel ທີ່ເຮົາສົນໃຈ
         if (
           layer &&
           layer.get("name") &&
           layer.get("name").startsWith("parcel_layer_")
         ) {
-          selectedParcel = feature;
-          return true; // ຢຸດການຊອກຫາເມື່ອພົບ feature ແລ້ວ
+          if (feature.getGeometry() && feature.get("cadastre_parcel_id")) {
+            selectedParcelFeature = feature;
+            return true;
+          }
         }
       });
 
-      // Clear previous selected state (ລຶບສະຖານະການເລືອກກ່ອນໜ້າ)
       Object.values(layersRef.current).forEach((layer) => {
-        if (layer) {
+        if (layer && layer.getSource()) {
           layer
             .getSource()
             .getFeatures()
             .forEach((f) => {
               if (f.get("isSelected")) {
                 f.set("isSelected", false);
-                f.changed(); // ບັງຄັບໃຫ້ layer update style
+                f.changed();
               }
             });
         }
       });
 
-      if (selectedParcel) {
-        // ຕັ້ງຄ່າ isSelected ເພື່ອປ່ຽນ style
-        selectedParcel.set("isSelected", true);
-        selectedParcel.changed(); // ບັງຄັບໃຫ້ feature update style
-        onParcelSelect(selectedParcel.getProperties()); // ສົ່ງ properties ຂອງ feature ໄປໃຫ້ ParcelInfoPanel
+      if (selectedParcelFeature) {
+        selectedParcelFeature.set("isSelected", true);
+        selectedParcelFeature.changed();
+        onParcelSelect(selectedParcelFeature.getProperties());
       } else {
-        onParcelSelect(null); // ບໍ່ມີ parcel ຖືກເລືອກ
+        onParcelSelect(null);
       }
     });
   }, [map, onParcelSelect]);
 
-  const processDistricts = useCallback(
-    debounce(() => {
-      districts.forEach((district) => {
-        const layerExists = layersRef.current[district.name];
-
-        if (district.checked && !layerExists) {
-          // ເລືອກແລ້ວ ແລະຍັງບໍ່ມີ layer, ໃຫ້ໂຫຼດຂໍ້ມູນ
-          loadParcelData(district);
-        } else if (!district.checked && layerExists) {
-          // ບໍ່ເລືອກແລ້ວ ແລະມີ layer, ໃຫ້ເອົາ layer ອອກ
-          map.removeLayer(layerExists);
-          delete layersRef.current[district.name];
-        }
-      });
-    }, 300),
-    [map, districts, loadParcelData] // ບໍ່ຕ້ອງມີ setDistricts ຢູ່ທີ່ນີ້, ມັນເປັນ state setter
-  );
-
+  // Effect for initial click handler setup and cleanup
   useEffect(() => {
     if (!map) return;
-
     setupClickHandler();
 
     return () => {
-      // Cleanup
+      // Cleanup: remove all parcel layers and click handler
       Object.values(layersRef.current).forEach((layer) => {
-        map.removeLayer(layer);
+        if (map && layer) {
+          map.removeLayer(layer);
+        }
       });
+      layersRef.current = {};
       if (clickKeyRef.current) {
         unByKey(clickKeyRef.current);
+        clickKeyRef.current = null;
       }
     };
   }, [map, setupClickHandler]);
 
+  // Effect to process districts whenever the districts state changes (add/remove layers)
   useEffect(() => {
-    processDistricts();
-  }, [districts, processDistricts]);
+    const process = debounce(() => {
+      districts.forEach((district) => {
+        const layerExists = layersRef.current[district.name];
 
-  // ຟັງຊັນສະແດງສະຖານະການໂຫລດ
+        if (district.checked && !district.loading && !layerExists) {
+          // If district is checked, hasn't loaded yet, isn't currently loading, and has an endpoint
+          loadParcelData(district); // This will set district.loading = true
+        } else if (!district.checked && layerExists) {
+          // If district is unchecked and layer exists, remove layer
+          map.removeLayer(layerExists);
+          delete layersRef.current[district.name];
+          // Reset hasLoaded, error, and parcels for this district when unchecked
+          setDistricts((prevDistricts) =>
+            prevDistricts.map((d) =>
+              d.name === district.name
+                ? { ...d, hasLoaded: false, error: null, loading: false } // Also reset loading here
+                : d
+            )
+          );
+        }
+      });
+    }, 100); // Debounce to prevent rapid updates
+
+    process();
+  }, [districts, map, loadParcelData, setDistricts]);
+
+  // Render loading and error status within this component if needed for specific district feedback
+  // (These are now redundant with the DistrictSelector showing individual loading/error states,
+  // but kept here as a fallback or for more detailed messages if required)
   const renderLoadingStatus = () => {
-    if (loadingDistricts.length === 0) return null;
+    const loadingDistrictsList = districts
+      .filter((d) => d.loading)
+      .map((d) => d.displayName);
+    if (loadingDistrictsList.length === 0) return null;
 
     return (
       <div className="parcel-loading-status">
         <div className="loading-spinner"></div>
-        <p>ກຳລັງໂຫລດຂໍ້ມູນ: {loadingDistricts.join(", ")}</p>
+        <p>ກຳລັງໂຫລດຂໍ້ມູນ: {loadingDistrictsList.join(", ")}</p>
       </div>
     );
   };
 
-  // ຟັງຊັນສະແດງຂໍ້ຜິດພາດ
   const renderErrors = () => {
-    const errorEntries = Object.entries(errors).filter(([_, error]) => error);
-    if (errorEntries.length === 0) return null;
+    const errorDistricts = districts.filter((d) => d.error);
+    if (errorDistricts.length === 0) return null;
 
     return (
-      <div className="parcel-errors">
+      <div className="parcel-error-status">
         <p>ມີຂໍ້ຜິດພາດໃນການໂຫລດຂໍ້ມູນ:</p>
         <div className="error-list">
-          {errorEntries.map(([districtName, errorMessage]) => (
-            <div key={districtName} className="error-item">
+          {errorDistricts.map((d) => (
+            <div key={d.name} className="error-item">
               <span className="error-message">
-                {districtName}: {errorMessage}
+                {d.displayName}: {d.error}
               </span>
               <button
                 className="retry-button"
                 onClick={() => {
-                  const districtToRetry = districts.find(
-                    (d) => d.name === districtName
+                  // Reset error and hasLoaded to trigger re-fetch by MapComponent's useEffect
+                  setDistricts((prev) =>
+                    prev.map((districtItem) =>
+                      districtItem.name === d.name
+                        ? {
+                            ...districtItem,
+                            error: null,
+                            hasLoaded: false,
+                            loading: false,
+                          }
+                        : districtItem
+                    )
                   );
-                  if (districtToRetry) {
-                    loadParcelData(districtToRetry);
-                  }
                 }}
               >
                 ລອງໃໝ່
@@ -292,8 +362,9 @@ const ParcelLayerControl = ({
 
   return (
     <>
-      {renderLoadingStatus()}
-      {renderErrors()}
+      {renderLoadingStatus()}{" "}
+      {/* This will now mostly be hidden, global one in MapComponent */}
+      {renderErrors()} {/* This will show more detailed errors if any */}
     </>
   );
 };

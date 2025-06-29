@@ -6,9 +6,6 @@ const BaseMapSwitcher = ({
   onSelectBaseMap,
   isSidebarCollapsed,
 }) => {
-  // ກວດສອບວ່າ map instance ຖືກສົ່ງມາແລ້ວ ຫຼືບໍ່
-  // ຖ້າ map ຍັງບໍ່ມີຄ່າ, ໃຫ້ return null ເພື່ອບໍ່ສະແດງຫຍັງເລີຍ
-  // ນີ້ຈະແກ້ໄຂບັນຫາ "Cannot read properties of undefined (reading 'map')"
   if (!map) {
     console.warn(
       "BaseMapSwitcher: Map instance not yet available, rendering null."
@@ -16,38 +13,30 @@ const BaseMapSwitcher = ({
     return null;
   }
 
+  // --- IMPROVEMENT START ---
+  // ກໍານົດຊື່ຂອງ Base Layers ໄວ້ເພື່ອໃຫ້ງ່າຍຕໍ່ການກວດສອບ
+  const baseLayerNames = ["OSM", "Google Satellite", "Google Hybrid"];
+
   // ດຶງຂໍ້ມູນຊັ້ນພື້ນຖານຈາກ map object
   const baseLayers = map
     .getLayers()
     .getArray()
-    .filter(
-      (layer) =>
-        layer.get("name") === "OSM" ||
-        layer.get("name") === "Google Satellite" ||
-        layer.get("name") === "Google Hybrid"
-    );
+    .filter((layer) => baseLayerNames.includes(layer.get("name")));
 
   const handleBaseMapChange = (event) => {
-    // ປ່ຽນເປັນຮັບ event
     const newBaseMapName = event.target.value;
-    onSelectBaseMap(newBaseMapName); // ດຶງຄ່າຈາກ event.target.value
+    onSelectBaseMap(newBaseMapName);
 
-    // ເປີດ/ປິດການເບິ່ງເຫັນຂອງ layer ໂດຍກົງທີ່ນີ້
+    // ປັບປຸງ Logic: ໃຫ້วนลูปສະເພາະ Base Layers
+    // ເພື່ອເປີດ/ປິດການເບິ່ງເຫັນ, ຈະບໍ່ມີຜົນກະທົບກັບ layers ອື່ນ (parcels, roads, etc.)
     map.getLayers().forEach((layer) => {
-      if (layer.get("name") === newBaseMapName) {
-        layer.setVisible(true);
-      } else {
-        // ປິດ layer ອື່ນໆ, ແຕ່ຕ້ອງແນ່ໃຈວ່າບໍ່ປິດ layer ຂໍ້ມູນ (parcel layer)
-        // ໂດຍການກວດສອບ layer name
-        if (
-          !layer.get("name").startsWith("parcel_layer_") &&
-          layer.get("name") !== "drawing_layer"
-        ) {
-          layer.setVisible(false);
-        }
+      const layerName = layer.get("name");
+      if (baseLayerNames.includes(layerName)) {
+        layer.setVisible(layerName === newBaseMapName);
       }
     });
   };
+  // --- IMPROVEMENT END ---
 
   return (
     <div

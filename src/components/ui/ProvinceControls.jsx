@@ -2,9 +2,10 @@ import React from "react";
 import { fromLonLat } from "ol/proj";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 
+// --- CHANGE ---
+// Removed `setCenter` and `setZoom` from props. They are not needed as
+// `onProvinceSelectForMap` handles the map movement directly.
 const ProvinceControls = ({
-  setCenter,
-  setZoom,
   openLayersLoaded,
   isSidebarCollapsed,
   isExpanded,
@@ -12,9 +13,6 @@ const ProvinceControls = ({
   onProvinceSelectForMap,
 }) => {
   const provinces = [
-    // !!! ສໍາຄັນ: "name" ນີ້ຈະຖືກໃຊ້ສໍາລັບການກັ່ນຕອງເມືອງ ແລະ ຂໍ້ມູນເສັ້ນທາງ !!!
-    // "displayName" ແມ່ນສໍາລັບການສະແດງຜົນເທົ່ານັ້ນ.
-    // ໃຫ້ແນ່ໃຈວ່າ "name" ກົງກັນລະຫວ່າງ MapComponent ແລະ ProvinceControls
     {
       name: "VientianeCapital",
       displayName: "ນະຄອນຫຼວງວຽງຈັນ",
@@ -33,92 +31,84 @@ const ProvinceControls = ({
       coords: [101.4, 20.95],
       zoom: 9,
     },
-    { name: "Bokeo", displayName: "ບໍ່ແກ້ວ", coords: [100.43, 20.26], zoom: 9 },
     {
       name: "Oudomxay",
       displayName: "ອຸດົມໄຊ",
-      coords: [101.98, 20.69],
+      coords: [102.0, 20.69],
       zoom: 9,
     },
+    { name: "Bokeo", displayName: "ບໍ່ແກ້ວ", coords: [100.5, 20.3], zoom: 9 },
     {
       name: "LuangPrabang",
       displayName: "ຫຼວງພະບາງ",
-      coords: [102.14, 19.89],
-      zoom: 10,
-    },
-    {
-      name: "Houaphanh",
-      displayName: "ຫົວພັນ",
-      coords: [104.05, 20.42],
+      coords: [102.0, 19.89],
       zoom: 9,
     },
+    { name: "Huaphanh", displayName: "ຫົວພັນ", coords: [103.8, 20.4], zoom: 9 },
     {
-      name: "Sainyabuli",
+      name: "Sayaboury",
       displayName: "ໄຊຍະບູລີ",
-      coords: [101.75, 19.25],
+      coords: [101.7, 19.25],
       zoom: 9,
     },
     {
-      name: "Xiangkhoang",
+      name: "Xiangkhouang",
       displayName: "ຊຽງຂວາງ",
-      coords: [103.18, 19.46],
+      coords: [103.3, 19.45],
       zoom: 9,
     },
     {
       name: "VientianeProvince",
-      displayName: "ວຽງຈັນ",
-      coords: [102.45, 18.92],
+      displayName: "ແຂວງວຽງຈັນ",
+      coords: [102.4, 18.5],
       zoom: 9,
     },
     {
-      name: "Bolikhamxai",
+      name: "Bolikhamxay",
       displayName: "ບໍລິຄໍາໄຊ",
-      coords: [103.66, 18.38],
+      coords: [104.0, 18.3],
       zoom: 9,
     },
     {
       name: "Khammouane",
       displayName: "ຄໍາມ່ວນ",
-      coords: [104.83, 17.41],
+      coords: [104.8, 17.6],
       zoom: 9,
     },
     {
       name: "Savannakhet",
       displayName: "ສະຫວັນນະເຂດ",
-      coords: [104.75, 16.57],
+      coords: [105.5, 16.5],
       zoom: 9,
     },
     {
-      name: "Salavan",
+      name: "Salavanh",
       displayName: "ສາລະວັນ",
-      coords: [106.42, 15.72],
+      coords: [106.3, 15.7],
       zoom: 9,
     },
-    { name: "Sekong", displayName: "ເຊກອງ", coords: [106.72, 15.34], zoom: 9 },
+    { name: "Sekong", displayName: "ເຊກອງ", coords: [106.8, 15.3], zoom: 9 },
     {
       name: "Champasak",
       displayName: "ຈໍາປາສັກ",
-      coords: [105.78, 15.12],
+      coords: [106.0, 14.8],
       zoom: 9,
     },
+    { name: "Attapeu", displayName: "ອັດຕະປື", coords: [106.8, 14.2], zoom: 9 },
     {
-      name: "Attapeu",
-      displayName: "ອັດຕະປື",
-      coords: [106.83, 14.8],
-      zoom: 9,
-    },
-    {
-      name: "Xaisomboun",
+      name: "Xaysomboun",
       displayName: "ໄຊສົມບູນ",
-      coords: [102.9, 18.78],
-      zoom: 9,
+      coords: [102.9, 18.8],
+      zoom: 10,
     },
   ];
 
+  // --- CHANGE ---
+  // Simplified the handler. It only needs to call the onProvinceSelectForMap prop.
   const handleSetView = (coords, zoom, provinceName) => {
     if (openLayersLoaded) {
-      // Convert LonLat to map projection coordinates before sending to MapComponent
-      // MapComponent will then update its state and the map view
+      // The `fromLonLat` function converts the standard coordinates
+      // into the projection used by the map (EPSG:3857).
       onProvinceSelectForMap(fromLonLat(coords), zoom, provinceName);
     } else {
       console.warn("OpenLayers map is not loaded yet. Cannot set view.");
@@ -148,7 +138,6 @@ const ProvinceControls = ({
             {provinces.map((province) => (
               <button
                 key={province.name}
-                // Pass province.name to handleSetView to be used for filtering districts/roads
                 onClick={() =>
                   handleSetView(province.coords, province.zoom, province.name)
                 }
@@ -156,7 +145,7 @@ const ProvinceControls = ({
                 className="province-button"
               >
                 <MapPin size={18} />
-                <span>{province.displayName}</span> {/* Display the Lao name */}
+                <span>{province.displayName}</span>
               </button>
             ))}
           </div>

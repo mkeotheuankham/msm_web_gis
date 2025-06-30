@@ -37,7 +37,6 @@ import { PanelLeft, PanelRight, AlertCircle } from "lucide-react";
 import { unByKey } from "ol/Observable";
 import initialLaoDistricts from "./data/LaoDistrictsData";
 
-// Debounce function
 const debounce = (func, delay) => {
   let timer;
   return function (...args) {
@@ -46,7 +45,6 @@ const debounce = (func, delay) => {
   };
 };
 
-// ErrorOverlay Component
 const ErrorOverlay = ({ errorMessage, style }) => {
   if (!errorMessage) return null;
   return (
@@ -57,7 +55,6 @@ const ErrorOverlay = ({ errorMessage, style }) => {
   );
 };
 
-// areExtentsEqual helper function
 const areExtentsEqual = (ext1, ext2) => {
   if (!ext1 || !ext2) return ext1 === ext2;
   if (ext1.length !== ext2.length) return false;
@@ -78,8 +75,6 @@ function MapComponent() {
   const [selectedBaseMap, setSelectedBaseMap] = useState("OSM");
   const [openLayersLoadedState, setOpenLayersLoadedState] = useState(false);
 
-  // --- FIX: Removed unused setters 'setCenterState' and 'setZoomState' ---
-  // The state variables are still used for the initial view setup.
   const [centerState] = useState(fromLonLat([103.85, 18.2]));
   const [zoomState] = useState(7);
 
@@ -112,6 +107,34 @@ function MapComponent() {
       [layerName]: { ...prev[layerName], ...newState },
     }));
   }, []);
+
+  const handleRoadLoadingChange = useCallback(
+    (isLoading) => {
+      updateLayerState("road", { isLoading });
+    },
+    [updateLayerState]
+  );
+
+  const handleRoadErrorChange = useCallback(
+    (error) => {
+      updateLayerState("road", { error });
+    },
+    [updateLayerState]
+  );
+
+  const handleBuildingLoadingChange = useCallback(
+    (isLoading) => {
+      updateLayerState("building", { isLoading });
+    },
+    [updateLayerState]
+  );
+
+  const handleBuildingErrorChange = useCallback(
+    (error) => {
+      updateLayerState("building", { error });
+    },
+    [updateLayerState]
+  );
 
   const [parcelDistrictsLoading, setParcelDistrictsLoading] = useState(false);
   const [parcelLoadingProgress, setParcelLoadingProgress] = useState(0);
@@ -173,8 +196,9 @@ function MapComponent() {
           setCurrentMapExtent(null);
         }
       } else {
-        console.warn("[MapComponent] view or view.getExtent is not available.");
-        setCurrentMapExtent(null);
+        console.warn(
+          "[MapComponent] view or view.getExtent is not available during extent update."
+        );
       }
     },
     [currentMapExtent]
@@ -245,7 +269,17 @@ function MapComponent() {
         map.on("moveend", () => debouncedUpdateMapExtent(initialView)),
       ];
       extentListenerKeys.current = keys;
-      setTimeout(() => debouncedUpdateMapExtent(initialView), 0);
+
+      // --- FIX: Use 'rendercomplete' for the first extent calculation ---
+      map.once("rendercomplete", () => {
+        if (viewInstanceRef.current) {
+          console.log(
+            "Map initial render complete. Calculating initial extent."
+          );
+          debouncedUpdateMapExtent(viewInstanceRef.current);
+        }
+      });
+
       setOpenLayersLoadedState(true);
       resizeObserver = new ResizeObserver(() => map.updateSize());
       resizeObserver.observe(currentMapContainer);
@@ -426,22 +460,16 @@ function MapComponent() {
                 isVisible={layerStates.road.isVisible}
                 selectedProvince={selectedProvinceForRoads}
                 mapExtent={currentMapExtent}
-                onLoadingChange={(isLoading) =>
-                  updateLayerState("road", { isLoading })
-                }
-                onErrorChange={(error) => updateLayerState("road", { error })}
+                onLoadingChange={handleRoadLoadingChange}
+                onErrorChange={handleRoadErrorChange}
               />
               <BuildingLayer
                 map={mapInstanceRef.current}
                 isVisible={layerStates.building.isVisible}
                 selectedDistrict={selectedDistrictForBuildings}
                 mapExtent={currentMapExtent}
-                onLoadingChange={(isLoading) =>
-                  updateLayerState("building", { isLoading })
-                }
-                onErrorChange={(error) =>
-                  updateLayerState("building", { error })
-                }
+                onLoadingChange={handleBuildingLoadingChange}
+                onErrorChange={handleBuildingErrorChange}
               />
             </>
           )}
@@ -451,8 +479,13 @@ function MapComponent() {
               onClose={() => setSelectedParcel(null)}
             />
           )}
+
           {mapInstanceRef.current && (
-            <CoordinateBar map={mapInstanceRef.current} />
+            <CoordinateBar
+              map={mapInstanceRef.current}
+              parcelLoadedFeaturesCount={parcelLoadedFeaturesCount}
+              layerStates={layerStates}
+            />
           )}
         </div>
         <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>

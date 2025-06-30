@@ -3,6 +3,8 @@ import { toLonLat } from "ol/proj";
 import proj4 from "proj4";
 import { unByKey } from "ol/Observable";
 import Snap from "ol/interaction/Snap";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
 import {
   MapPin,
   Copy,
@@ -23,7 +25,7 @@ const getUtmProjString = (zone, isNorth) => {
   return `+proj=utm +zone=${zone} +datum=WGS84 +units=m +no_defs${hemi}`;
 };
 
-const CoordinateBar = ({ map }) => {
+const CoordinateBar = ({ map, parcelLoadedFeaturesCount, layerStates }) => {
   const [isPanelVisible, setIsPanelVisible] = useState(false);
   const [isSnapActive, setIsSnapActive] = useState(false);
   const [coords, setCoords] = useState({
@@ -40,6 +42,12 @@ const CoordinateBar = ({ map }) => {
   const historyCounterRef = useRef(1);
   const panelRef = useRef(null);
   const snapInteractionRef = useRef(null);
+  const snapSourceRef = useRef(new VectorSource()); // Dedicated source for snapping
+
+  const handleClosePanel = () => {
+    setIsPanelVisible(false);
+    setIsSnapActive(false);
+  };
 
   const formatCoords = useCallback((coordObj) => {
     if (!coordObj.lon || !coordObj.lat) return "N/A";
@@ -87,24 +95,57 @@ const CoordinateBar = ({ map }) => {
     historyCounterRef.current = 1;
   };
 
+  // --- REVISED and FINAL useEffect for managing Snap interaction ---
   useEffect(() => {
     if (!map) return;
 
-    if (isSnapActive && !snapInteractionRef.current) {
-      const newSnap = new Snap({ pixelTolerance: 15 });
-      map.addInteraction(newSnap);
-      snapInteractionRef.current = newSnap;
-    } else if (!isSnapActive && snapInteractionRef.current) {
+    // Always remove the old snap interaction first to ensure a clean state
+    if (snapInteractionRef.current) {
       map.removeInteraction(snapInteractionRef.current);
       snapInteractionRef.current = null;
     }
-  }, [map, isSnapActive]);
 
-  useEffect(() => {
-    if (!isPanelVisible) {
-      setIsSnapActive(false);
+    if (isSnapActive) {
+      console.log("Snap Mode ON. Re-populating snap source.");
+
+      // Clear the dedicated snap source before adding new features
+      snapSourceRef.current.clear();
+
+      // Find all features from all vector layers and add them to our dedicated source
+      const allLayers = map.getLayers().getArray();
+      for (const layer of allLayers) {
+        if (layer instanceof VectorLayer) {
+          const source = layer.getSource();
+          if (source && typeof source.getFeatures === "function") {
+            const features = source.getFeatures();
+            if (features.length > 0) {
+              snapSourceRef.current.addFeatures(features);
+            }
+          }
+        }
+      }
+
+      console.log(
+        `Snap source now contains ${
+          snapSourceRef.current.getFeatures().length
+        } features.`
+      );
+
+      if (snapSourceRef.current.getFeatures().length > 0) {
+        const newSnap = new Snap({
+          source: snapSourceRef.current, // Use our dedicated, populated source
+          pixelTolerance: 20, // A larger tolerance for easier snapping
+        });
+
+        map.addInteraction(newSnap);
+        snapInteractionRef.current = newSnap;
+      } else {
+        console.warn(
+          "Snap active, but no features were available to populate the snap source."
+        );
+      }
     }
-  }, [isPanelVisible]);
+  }, [map, isSnapActive, parcelLoadedFeaturesCount, layerStates]); // Re-run when snap is toggled or features change
 
   useEffect(() => {
     if (!map) return;
@@ -132,30 +173,18 @@ const CoordinateBar = ({ map }) => {
     return () => unByKey(pointerMoveKey);
   }, [map]);
 
-  // --- UPDATED EFFECT for map click ---
   useEffect(() => {
     if (!map) return;
-
     const handleMapClick = (evt) => {
-      // 1. Check if the panel is visible. If not, do nothing.
-      if (!isPanelVisible) {
-        return;
-      }
-
-      // 2. Check if the click is inside the coordinate panel. If so, do nothing.
+      if (!isPanelVisible) return;
       if (
         panelRef.current &&
         panelRef.current.contains(evt.originalEvent.target)
-      ) {
+      )
         return;
-      }
-
-      // 3. If conditions are met, add to history.
       handleAddHistory();
     };
-
     const clickKey = map.on("click", handleMapClick);
-    // Add isPanelVisible to dependency array to re-evaluate the listener if needed
     return () => unByKey(clickKey);
   }, [map, isPanelVisible, handleAddHistory]);
 
@@ -184,7 +213,7 @@ const CoordinateBar = ({ map }) => {
           <div className="coordinate-bar-header">
             <h3>Coordinate Tools</h3>
             <button
-              onClick={() => setIsSnapActive(!isSnapActive)}
+              onClick={() => setIsSnapActive((prev) => !prev)}
               className={`snap-toggle-button ${isSnapActive ? "active" : ""}`}
               title={isSnapActive ? "ປິດໂໝດ Snap" : "ເປີດໂໝດ Snap"}
             >
@@ -192,7 +221,7 @@ const CoordinateBar = ({ map }) => {
               <span>{isSnapActive ? "Snap ON" : "Snap OFF"}</span>
             </button>
             <button
-              onClick={() => setIsPanelVisible(false)}
+              onClick={handleClosePanel}
               className="close-panel-button"
               title="ປິດ"
             >

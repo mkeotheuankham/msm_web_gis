@@ -50,7 +50,7 @@ function MapComponent({
   const drawInteractionRef = useRef(null);
   const modifyInteractionRef = useRef(null);
   const selectInteractionRef = useRef(null);
-  const snapInteractionRef = useRef(null); // This will hold the current snap instance
+  const snapInteractionRef = useRef(null);
 
   const [interactionMode, setInteractionMode] = useState("None");
   const [isSnapActive, setIsSnapActive] = useState(false);
@@ -153,7 +153,11 @@ function MapComponent({
     const resizeObserver = new ResizeObserver(() => map.updateSize());
     resizeObserver.observe(currentMapContainer);
 
+    // Force map to update its size after the initial render to prevent black screen
+    const timerId = setTimeout(() => map.updateSize(), 100);
+
     return () => {
+      clearTimeout(timerId);
       map.setTarget(undefined);
       resizeObserver.disconnect();
     };
@@ -254,41 +258,41 @@ function MapComponent({
     }
   }, [interactionMode, pushToHistory]);
 
-  // --- THE FINAL, CORRECT WAY TO MANAGE SNAP ---
+  // FINAL CORRECTED LOGIC FOR SNAP INTERACTION
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Always remove the previous snap interaction if it exists
+    // 1. Always remove the old snap interaction first
     if (snapInteractionRef.current) {
       map.removeInteraction(snapInteractionRef.current);
     }
 
-    // Only add a new one if snap is active
-    if (isSnapActive) {
-      const layers = map.getLayers().getArray();
-      const parcelLayers = layers.filter((l) =>
-        l.get("name")?.startsWith("parcel_layer_")
-      );
-
-      // Collect all sources for the new snap interaction
-      const sourcesToSnap = [
-        drawingSourceRef.current,
-        ...parcelLayers.map((l) => l.getSource()),
-      ];
-
-      // Create the new Snap interaction with all sources
-      const newSnap = new Snap({
-        sources: sourcesToSnap,
-        pixelTolerance: 20,
-      });
-
-      map.addInteraction(newSnap);
-      snapInteractionRef.current = newSnap; // Store the new instance
-    } else {
-      snapInteractionRef.current = null; // Ensure the ref is null if snap is off
+    // 2. If snap is toggled off, do nothing further
+    if (!isSnapActive) {
+      snapInteractionRef.current = null;
+      return;
     }
-  }, [districts, isSnapActive]); // Re-run when snap is toggled or when layers might have changed
+
+    // 3. If snap is on, collect all sources and create a NEW interaction
+    const layers = map.getLayers().getArray();
+    const parcelLayers = layers.filter((l) =>
+      l.get("name")?.startsWith("parcel_layer_")
+    );
+
+    const sourcesToSnap = [
+      drawingSourceRef.current,
+      ...parcelLayers.map((l) => l.getSource()),
+    ];
+
+    const newSnap = new Snap({
+      sources: sourcesToSnap,
+      pixelTolerance: 20,
+    });
+
+    map.addInteraction(newSnap);
+    snapInteractionRef.current = newSnap; // Store the new instance
+  }, [districts, isSnapActive]); // Rerun when snap is toggled or when layers might have changed
 
   return (
     <div className="map-wrapper">

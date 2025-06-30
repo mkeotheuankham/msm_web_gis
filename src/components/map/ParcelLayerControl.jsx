@@ -4,12 +4,10 @@ import VectorSource from "ol/source/Vector";
 import GeoJSON from "ol/format/GeoJSON";
 import { Fill, Stroke, Style, Text } from "ol/style";
 import { unByKey } from "ol/Observable";
-import { Feature } from "ol";
 
 const getParcelStyle = (feature, resolution) => {
   const color = feature.get("color") || "#3399CC";
   const isSelected = feature.get("isSelected");
-
   const styles = [
     new Style({
       stroke: new Stroke({
@@ -21,7 +19,6 @@ const getParcelStyle = (feature, resolution) => {
       }),
     }),
   ];
-
   if (resolution < 5) {
     styles.push(
       new Style({
@@ -45,18 +42,17 @@ const ParcelLayerControl = ({
   districts,
   setDistricts,
   onParcelSelect,
-  loadTrigger, // Prop ໃໝ່ເພື່ອຮັບຄໍາສັ່ງໃຫ້ໂຫຼດ
+  loadTrigger,
 }) => {
   const layersRef = useRef({});
   const clickKeyRef = useRef(null);
 
   const loadParcelData = useCallback(
     async (districtToLoad, attempt = 0) => {
-      // ... Logic ການໂຫຼດຂໍ້ມູນຍັງຄືເກົ່າ ...
       console.log(
-        `[ParcelLayerControl] Starting data load for: ${
-          districtToLoad.displayName
-        } (Attempt ${attempt + 1}/${MAX_RETRIES + 1})`
+        `[ParcelLayerControl] Loading: ${districtToLoad.displayName} (Attempt ${
+          attempt + 1
+        })`
       );
       setDistricts((prev) =>
         prev.map((d) =>
@@ -72,14 +68,15 @@ const ParcelLayerControl = ({
         const rawData = await response.json();
         const parcelsArray = rawData[districtToLoad.dataKey];
         if (!parcelsArray || !Array.isArray(parcelsArray))
-          throw new Error(
-            `Invalid data format: '${districtToLoad.dataKey}' array not found.`
-          );
+          throw new Error(`Invalid data format.`);
 
         const geoJsonFormat = new GeoJSON();
-        const features = parcelsArray
-          .map((item) => {
-            const geoJsonFeature = {
+        const features = [];
+        parcelsArray.forEach((item) => {
+          if (!item.geom) return;
+
+          const olFeature = geoJsonFormat.readFeature(
+            {
               type: "Feature",
               geometry: item.geom,
               properties: {
@@ -88,13 +85,19 @@ const ParcelLayerControl = ({
                 district_lao: item.district_lao || districtToLoad.displayName,
                 color: districtToLoad.color,
               },
-            };
-            return geoJsonFormat.readFeature(geoJsonFeature, {
-              dataProjection: "EPSG:4326",
-              featureProjection: "EPSG:3857",
-            });
-          })
-          .filter(Boolean);
+            },
+            { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
+          );
+
+          // --- FIX: Set a unique ID for each feature ---
+          const featureId =
+            item.cadastre_parcel_id ||
+            `${item.cadastremapno}-${item.parcelno}` ||
+            `parcel-${item.gid}`;
+          olFeature.setId(featureId);
+
+          features.push(olFeature);
+        });
 
         let vectorSource =
           layersRef.current[districtToLoad.name]?.getSource() ||
@@ -102,9 +105,8 @@ const ParcelLayerControl = ({
         vectorSource.clear();
         vectorSource.addFeatures(features);
 
-        let layer = layersRef.current[districtToLoad.name];
-        if (!layer) {
-          layer = new VectorLayer({
+        if (!layersRef.current[districtToLoad.name]) {
+          const newLayer = new VectorLayer({
             source: vectorSource,
             style: getParcelStyle,
             properties: {
@@ -113,10 +115,8 @@ const ParcelLayerControl = ({
             },
             zIndex: 10,
           });
-          map.addLayer(layer);
-          layersRef.current[districtToLoad.name] = layer;
-        } else {
-          layer.setSource(vectorSource);
+          map.addLayer(newLayer);
+          layersRef.current[districtToLoad.name] = newLayer;
         }
 
         setDistricts((prev) =>
@@ -132,52 +132,26 @@ const ParcelLayerControl = ({
               : d
           )
         );
-        console.log(
-          `[ParcelLayerControl] Finished loading for ${districtToLoad.displayName}.`
-        );
       } catch (error) {
         console.error(
-          `[ParcelLayerControl] Error loading for ${districtToLoad.displayName}:`,
+          `[ParcelLayerControl] Error for ${districtToLoad.displayName}:`,
           error
         );
-        if (attempt < MAX_RETRIES) {
-          const delay = BASE_RETRY_DELAY * Math.pow(2, attempt);
-          setDistricts((prev) =>
-            prev.map((d) =>
-              d.name === districtToLoad.name
-                ? {
-                    ...d,
-                    loading: false,
-                    error: `${error.message}. Retrying...`,
-                  }
-                : d
-            )
-          );
-          setTimeout(() => loadParcelData(districtToLoad, attempt + 1), delay);
-        } else {
-          setDistricts((prev) =>
-            prev.map((d) =>
-              d.name === districtToLoad.name
-                ? { ...d, error: `Failed: ${error.message}`, loading: false }
-                : d
-            )
-          );
-        }
+        setDistricts((prev) =>
+          prev.map((d) =>
+            d.name === districtToLoad.name
+              ? { ...d, error: `Failed: ${error.message}`, loading: false }
+              : d
+          )
+        );
       }
     },
     [map, setDistricts]
   );
 
-  // --- NEW EFFECT FOR ON-DEMAND LOADING ---
-  // Effect ນີ້ຈະເຮັດວຽກເມື່ອ `loadTrigger` ມີການປ່ຽນແປງເທົ່ານັ້ນ
   useEffect(() => {
-    // ບໍ່ໃຫ້ເຮັດວຽກຕອນເລີ່ມຕົ້ນ (ເມື່ອ loadTrigger ເປັນ 0)
     if (loadTrigger > 0) {
-      console.log(
-        "[ParcelLayerControl] Load trigger received. Loading checked districts."
-      );
       districts.forEach((district) => {
-        // ໂຫຼດສະເພາະເມືອງທີ່ຖືກເລືອກ (checked) ແລະ ຍັງບໍ່ເຄີຍໂຫຼດ
         if (district.checked && !district.hasLoaded && !district.loading) {
           loadParcelData(district);
         }
@@ -185,22 +159,17 @@ const ParcelLayerControl = ({
     }
   }, [loadTrigger, districts, loadParcelData]);
 
-  // --- EFFECT FOR VISIBILITY MANAGEMENT ---
-  // Effect ນີ້ຈະຈັດການສະແດງ/ເຊື່ອງ layer ທີ່ໂຫຼດແລ້ວ
   useEffect(() => {
     districts.forEach((district) => {
       const layer = layersRef.current[district.name];
       if (layer) {
-        // ສະແດງ layer ຖ້າຖືກເລືອກ (checked) ແລະ ໂຫຼດຂໍ້ມູນສຳເລັດແລ້ວ
         layer.setVisible(district.checked && district.hasLoaded);
       }
     });
   }, [districts]);
 
-  // Effect ສໍາລັບການຕັ້ງຄ່າ click handler ແລະ cleanup (ຄືເກົ່າ)
   useEffect(() => {
     if (!map) return;
-
     const clickHandler = map.on("singleclick", (evt) => {
       let selectedFeature = null;
       map.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
@@ -209,14 +178,12 @@ const ParcelLayerControl = ({
           return true;
         }
       });
-
       Object.values(layersRef.current).forEach((layer) => {
         layer
           ?.getSource()
           .getFeatures()
           .forEach((f) => f.get("isSelected") && f.set("isSelected", false));
       });
-
       if (selectedFeature) {
         selectedFeature.set("isSelected", true);
         onParcelSelect(selectedFeature.getProperties());
@@ -224,13 +191,9 @@ const ParcelLayerControl = ({
         onParcelSelect(null);
       }
     });
-
     clickKeyRef.current = clickHandler;
-
     return () => {
-      if (clickKeyRef.current) {
-        unByKey(clickKeyRef.current);
-      }
+      if (clickKeyRef.current) unByKey(clickKeyRef.current);
       Object.values(layersRef.current).forEach((layer) =>
         map.removeLayer(layer)
       );
@@ -240,5 +203,4 @@ const ParcelLayerControl = ({
 
   return null;
 };
-
 export default ParcelLayerControl;

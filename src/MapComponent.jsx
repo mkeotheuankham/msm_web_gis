@@ -14,6 +14,9 @@ import { fromLonLat, toLonLat } from "ol/proj";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Draw, { createBox } from "ol/interaction/Draw";
+import Snap from "ol/interaction/Snap";
+import Modify from "ol/interaction/Modify";
+import Select from "ol/interaction/Select";
 import Style from "ol/style/Style";
 import Fill from "ol/style/Fill";
 import Stroke from "ol/style/Stroke";
@@ -34,8 +37,8 @@ import BuildingLayer from "./components/map/BuildingLayer";
 import LoadingBar from "./LoadingBar";
 
 import { PanelLeft, PanelRight, AlertCircle } from "lucide-react";
-import { unByKey } from "ol/Observable";
 import initialLaoDistricts from "./data/LaoDistrictsData";
+import GeoJSON from "ol/format/GeoJSON";
 
 const debounce = (func, delay) => {
   let timer;
@@ -44,7 +47,6 @@ const debounce = (func, delay) => {
     timer = setTimeout(() => func.apply(this, args), delay);
   };
 };
-
 const ErrorOverlay = ({ errorMessage, style }) => {
   if (!errorMessage) return null;
   return (
@@ -55,51 +57,49 @@ const ErrorOverlay = ({ errorMessage, style }) => {
   );
 };
 
-const areExtentsEqual = (ext1, ext2) => {
-  if (!ext1 || !ext2) return ext1 === ext2;
-  if (ext1.length !== ext2.length) return false;
-  for (let i = 0; i < ext1.length; i++) {
-    if (ext1[i] !== ext2[i]) return false;
-  }
-  return true;
-};
-
 function MapComponent() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const viewInstanceRef = useRef(null);
-  const extentListenerKeys = useRef([]);
 
-  const vectorSourceRef = useRef(new VectorSource());
-  const drawRef = useRef(null);
-  const [selectedBaseMap, setSelectedBaseMap] = useState("OSM");
+  const drawingSourceRef = useRef(new VectorSource());
+  const measureSourceRef = useRef(new VectorSource());
+  const drawInteractionRef = useRef(null);
+  const modifyInteractionRef = useRef(null);
+  const selectInteractionRef = useRef(null);
+  const snapInteractionRef = useRef(null);
+
+  const [interactionMode, setInteractionMode] = useState("None");
+  const [isSnapActive, setIsSnapActive] = useState(false);
+
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const helpTooltipRef = useRef(null);
+  const measureTooltipRef = useRef(null);
+
   const [openLayersLoadedState, setOpenLayersLoadedState] = useState(false);
-
   const [centerState] = useState(fromLonLat([103.85, 18.2]));
   const [zoomState] = useState(7);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [drawingMode, setDrawingMode] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
-
   const [isDistrictsExpanded, setIsDistrictsExpanded] = useState(true);
   const [isProvincesExpanded, setIsProvincesExpanded] = useState(true);
 
   const [selectedProvinceForDistricts, setSelectedProvinceForDistricts] =
     useState(null);
-  const [selectedProvinceForRoads, setSelectedProvinceForRoads] =
-    useState(null);
-  const [selectedDistrictForBuildings, setSelectedDistrictForBuildings] =
-    useState(null);
-
   const [loadTrigger, setLoadTrigger] = useState(0);
 
   const [layerStates, setLayerStates] = useState({
     road: { isVisible: false, isLoading: false, error: null },
     building: { isVisible: false, isLoading: false, error: null },
   });
-
   const [districts, setDistricts] = useState(initialLaoDistricts);
+
+  const [selectedBaseMap, setSelectedBaseMap] = useState("OSM");
+  const [parcelLoadingProgress, setParcelLoadingProgress] = useState(0);
+  const [parcelLoadedFeaturesCount, setParcelLoadedFeaturesCount] = useState(0);
 
   const updateLayerState = useCallback((layerName, newState) => {
     setLayerStates((prev) => ({
@@ -109,60 +109,38 @@ function MapComponent() {
   }, []);
 
   const handleRoadLoadingChange = useCallback(
-    (isLoading) => {
-      updateLayerState("road", { isLoading });
-    },
+    (isLoading) => updateLayerState("road", { isLoading }),
     [updateLayerState]
   );
-
   const handleRoadErrorChange = useCallback(
-    (error) => {
-      updateLayerState("road", { error });
-    },
+    (error) => updateLayerState("road", { error }),
     [updateLayerState]
   );
-
   const handleBuildingLoadingChange = useCallback(
-    (isLoading) => {
-      updateLayerState("building", { isLoading });
-    },
+    (isLoading) => updateLayerState("building", { isLoading }),
     [updateLayerState]
   );
-
   const handleBuildingErrorChange = useCallback(
-    (error) => {
-      updateLayerState("building", { error });
-    },
+    (error) => updateLayerState("building", { error }),
     [updateLayerState]
   );
-
-  const [parcelDistrictsLoading, setParcelDistrictsLoading] = useState(false);
-  const [parcelLoadingProgress, setParcelLoadingProgress] = useState(0);
-  const [parcelLoadedFeaturesCount, setParcelLoadedFeaturesCount] = useState(0);
-  const [currentMapExtent, setCurrentMapExtent] = useState(null);
-  const drawingToolbarRef = useRef(null);
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
-
-  const toggleDistrict = useCallback((districtName) => {
-    setDistricts((prevDistricts) =>
-      prevDistricts.map((d) =>
-        d.name === districtName ? { ...d, checked: !d.checked } : d
-      )
-    );
-  }, []);
-
-  const handleLoadData = useCallback(() => {
-    setLoadTrigger((c) => c + 1);
-  }, []);
+  const toggleDistrict = useCallback(
+    (districtName) =>
+      setDistricts((prev) =>
+        prev.map((d) =>
+          d.name === districtName ? { ...d, checked: !d.checked } : d
+        )
+      ),
+    []
+  );
+  const handleLoadData = useCallback(() => setLoadTrigger((c) => c + 1), []);
+  const toggleSnap = useCallback(() => setIsSnapActive((prev) => !prev), []);
 
   const handleProvinceSelectionForMap = useCallback(
     (coords, zoom, provinceName) => {
-      if (
-        mapInstanceRef.current &&
-        viewInstanceRef.current &&
-        openLayersLoadedState
-      ) {
+      if (mapInstanceRef.current && viewInstanceRef.current) {
         viewInstanceRef.current.animate({
           center: coords,
           zoom: zoom,
@@ -170,246 +148,256 @@ function MapComponent() {
         });
       }
       setSelectedProvinceForDistricts(provinceName);
-      setSelectedProvinceForRoads(provinceName);
     },
-    [openLayersLoadedState]
-  );
-
-  const updateMapExtentCore = useCallback(
-    (view) => {
-      if (view && typeof view.getExtent === "function") {
-        try {
-          const extent3857 = view.getExtent();
-          const bottomLeft = toLonLat([extent3857[0], extent3857[1]]);
-          const topRight = toLonLat([extent3857[2], extent3857[3]]);
-          const newExtent = [
-            parseFloat(bottomLeft[0].toFixed(4)),
-            parseFloat(bottomLeft[1].toFixed(4)),
-            parseFloat(topRight[0].toFixed(4)),
-            parseFloat(topRight[1].toFixed(4)),
-          ];
-          if (!areExtentsEqual(currentMapExtent, newExtent)) {
-            setCurrentMapExtent(newExtent);
-          }
-        } catch (error) {
-          console.error("[MapComponent] Error getting map extent:", error);
-          setCurrentMapExtent(null);
-        }
-      } else {
-        console.warn(
-          "[MapComponent] view or view.getExtent is not available during extent update."
-        );
-      }
-    },
-    [currentMapExtent]
-  );
-
-  const debouncedUpdateMapExtent = useMemo(
-    () => debounce(updateMapExtentCore, 250),
-    [updateMapExtentCore]
+    []
   );
 
   useEffect(() => {
     let map;
-    let resizeObserver;
     const currentMapContainer = mapRef.current;
-    if (!currentMapContainer) return;
-    const initOpenLayersMap = () => {
-      if (
-        currentMapContainer.clientWidth === 0 ||
-        currentMapContainer.clientHeight === 0
-      ) {
-        setTimeout(initOpenLayersMap, 100);
-        return;
-      }
-      if (mapInstanceRef.current) return;
-      const osmLayer = new TileLayer({
-        source: new OSM(),
-        properties: { name: "OSM" },
-      });
-      const googleSatLayer = new TileLayer({
-        source: new XYZ({
-          url: "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
-          maxZoom: 20,
-        }),
-        properties: { name: "Google Satellite" },
-        visible: false,
-      });
-      const googleHybridLayer = new TileLayer({
-        source: new XYZ({
-          url: "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
-          maxZoom: 20,
-        }),
-        properties: { name: "Google Hybrid" },
-        visible: false,
-      });
-      const initialView = new View({
-        center: centerState,
-        zoom: zoomState,
-        minZoom: 2,
-        maxZoom: 22,
-      });
-      map = new Map({
-        target: currentMapContainer,
-        layers: [osmLayer, googleSatLayer, googleHybridLayer],
-        view: initialView,
-        controls: defaultControls(),
-        interactions: defaultInteractions(),
-        pixelRatio: 1,
-      });
-      mapInstanceRef.current = map;
-      viewInstanceRef.current = initialView;
-      const keys = [
-        initialView.on("change:center", () =>
-          debouncedUpdateMapExtent(initialView)
-        ),
-        initialView.on("change:resolution", () =>
-          debouncedUpdateMapExtent(initialView)
-        ),
-        map.on("moveend", () => debouncedUpdateMapExtent(initialView)),
-      ];
-      extentListenerKeys.current = keys;
+    if (!currentMapContainer || mapInstanceRef.current) return;
 
-      // --- FIX: Use 'rendercomplete' for the first extent calculation ---
-      map.once("rendercomplete", () => {
-        if (viewInstanceRef.current) {
-          console.log(
-            "Map initial render complete. Calculating initial extent."
-          );
-          debouncedUpdateMapExtent(viewInstanceRef.current);
-        }
-      });
+    const osmLayer = new TileLayer({
+      source: new OSM(),
+      properties: { name: "OSM" },
+    });
+    const googleSatLayer = new TileLayer({
+      source: new XYZ({
+        url: "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
+        maxZoom: 20,
+      }),
+      properties: { name: "Google Satellite" },
+      visible: false,
+    });
+    const googleHybridLayer = new TileLayer({
+      source: new XYZ({
+        url: "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
+        maxZoom: 20,
+      }),
+      properties: { name: "Google Hybrid" },
+      visible: false,
+    });
+    const drawingLayer = new VectorLayer({
+      source: drawingSourceRef.current,
+      style: new Style({
+        fill: new Fill({ color: "rgba(255, 255, 255, 0.2)" }),
+        stroke: new Stroke({ color: "#ffcc33", width: 3 }),
+        image: new CircleStyle({
+          radius: 7,
+          fill: new Fill({ color: "#ffcc33" }),
+        }),
+      }),
+      properties: { name: "drawing_layer" },
+    });
+    const measureLayer = new VectorLayer({
+      source: measureSourceRef.current,
+      style: new Style({
+        fill: new Fill({ color: "rgba(255, 255, 255, 0.2)" }),
+        stroke: new Stroke({ color: "#ffcc33", width: 2 }),
+        image: new CircleStyle({
+          radius: 5,
+          stroke: new Stroke({ color: "#ffcc33" }),
+        }),
+      }),
+    });
 
-      setOpenLayersLoadedState(true);
-      resizeObserver = new ResizeObserver(() => map.updateSize());
-      resizeObserver.observe(currentMapContainer);
-    };
-    initOpenLayersMap();
+    const initialView = new View({
+      center: centerState,
+      zoom: zoomState,
+      minZoom: 2,
+      maxZoom: 22,
+    });
+
+    map = new Map({
+      target: currentMapContainer,
+      layers: [
+        osmLayer,
+        googleSatLayer,
+        googleHybridLayer,
+        drawingLayer,
+        measureLayer,
+      ],
+      view: initialView,
+      controls: defaultControls(),
+      interactions: defaultInteractions(),
+    });
+
+    mapInstanceRef.current = map;
+    viewInstanceRef.current = initialView;
+
+    setOpenLayersLoadedState(true);
+
+    const resizeObserver = new ResizeObserver(() => map.updateSize());
+    resizeObserver.observe(currentMapContainer);
+
     return () => {
-      extentListenerKeys.current.forEach(unByKey);
-      extentListenerKeys.current = [];
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.setTarget(undefined);
-        mapInstanceRef.current = null;
-      }
-      viewInstanceRef.current = null;
-      if (currentMapContainer && resizeObserver) {
-        resizeObserver.unobserve(currentMapContainer);
-      }
+      map.setTarget(undefined);
+      resizeObserver.disconnect();
     };
-  }, [debouncedUpdateMapExtent, centerState, zoomState]);
+  }, [centerState, zoomState]);
+
+  const pushToHistory = useCallback(() => {
+    const writer = new GeoJSON();
+    const features = drawingSourceRef.current.getFeatures();
+    const geoJsonStr = writer.writeFeatures(features);
+    setHistory((prev) => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(geoJsonStr);
+      setHistoryIndex(newHistory.length - 1);
+      return newHistory;
+    });
+  }, [historyIndex]);
 
   useEffect(() => {
-    if (mapInstanceRef.current && openLayersLoadedState) {
-      const timer = setTimeout(() => mapInstanceRef.current.updateSize(), 300);
-      return () => clearTimeout(timer);
+    if (openLayersLoadedState && history.length === 0) {
+      pushToHistory();
     }
-  }, [isSidebarCollapsed, openLayersLoadedState]);
+  }, [openLayersLoadedState, history.length, pushToHistory]);
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      const features = new GeoJSON().readFeatures(history[newIndex]);
+      drawingSourceRef.current.clear();
+      drawingSourceRef.current.addFeatures(features);
+      setHistoryIndex(newIndex);
+    }
+  }, [history, historyIndex]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      const newIndex = historyIndex + 1;
+      const features = new GeoJSON().readFeatures(history[newIndex]);
+      drawingSourceRef.current.clear();
+      drawingSourceRef.current.addFeatures(features);
+      setHistoryIndex(newIndex);
+    }
+  }, [history, historyIndex]);
+
+  const handleSave = () => {
+    const writer = new GeoJSON();
+    const features = drawingSourceRef.current.getFeatures();
+    if (features.length === 0) {
+      alert("ບໍ່ມີຂໍ້ມູນໃຫ້ບັນທຶກ!");
+      return;
+    }
+    const geoJsonData = writer.writeFeaturesObject(features, {
+      dataProjection: "EPSG:4326",
+      featureProjection: "EPSG:3857",
+    });
+    console.log("Saving Data (GeoJSON):", JSON.stringify(geoJsonData, null, 2));
+    alert(
+      `ຂໍ້ມູນ GeoJSON ຈຳນວນ ${features.length} features ຖືກບັນທຶກລົງໃນ Console ແລ້ວ.`
+    );
+  };
+
+  const clearDrawingAndMeasure = useCallback(() => {
+    drawingSourceRef.current.clear();
+    measureSourceRef.current.clear();
+    if (helpTooltipRef.current)
+      mapInstanceRef.current.removeOverlay(helpTooltipRef.current);
+    if (measureTooltipRef.current)
+      mapInstanceRef.current.removeOverlay(measureTooltipRef.current);
+    pushToHistory();
+  }, [pushToHistory]);
 
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
-    let vectorLayer = map
-      .getLayers()
-      .getArray()
-      .find((l) => l.get("name") === "drawing_layer");
-    if (!vectorLayer) {
-      vectorLayer = new VectorLayer({
-        source: vectorSourceRef.current,
-        style: new Style({
-          fill: new Fill({ color: "rgba(255, 255, 255, 0.2)" }),
-          stroke: new Stroke({ color: "#ffcc33", width: 2 }),
-          image: new CircleStyle({
-            radius: 7,
-            fill: new Fill({ color: "#ffcc33" }),
-          }),
-        }),
-        properties: { name: "drawing_layer" },
-      });
-      map.addLayer(vectorLayer);
-    }
-    if (drawRef.current) map.removeInteraction(drawRef.current);
-    if (drawingMode) {
-      const drawInteraction = new Draw({
-        source: vectorSourceRef.current,
-        type: drawingMode === "Box" ? "Circle" : drawingMode,
-        geometryFunction: drawingMode === "Box" ? createBox() : undefined,
-      });
-      map.addInteraction(drawInteraction);
-      drawRef.current = drawInteraction;
-    }
-    return () => {
-      if (drawRef.current) {
-        if (map) map.removeInteraction(drawRef.current);
-        drawRef.current = null;
-      }
-    };
-  }, [drawingMode]);
 
-  const clearDrawing = () => vectorSourceRef.current.clear();
+    const removeAllInteractions = () => {
+      if (drawInteractionRef.current)
+        map.removeInteraction(drawInteractionRef.current);
+      if (selectInteractionRef.current)
+        map.removeInteraction(selectInteractionRef.current);
+      if (modifyInteractionRef.current)
+        map.removeInteraction(modifyInteractionRef.current);
+      if (helpTooltipRef.current) map.removeOverlay(helpTooltipRef.current);
+      if (measureTooltipRef.current)
+        map.removeOverlay(measureTooltipRef.current);
+    };
+    removeAllInteractions();
+
+    let drawType;
+    if (interactionMode.startsWith("Draw"))
+      drawType = interactionMode.replace("Draw", "");
+    else if (interactionMode.startsWith("Measure"))
+      drawType = interactionMode === "MeasureArea" ? "Polygon" : "LineString";
+
+    if (drawType) {
+      const source = interactionMode.startsWith("Measure")
+        ? measureSourceRef.current
+        : drawingSourceRef.current;
+      const newDraw = new Draw({
+        source,
+        type: drawType === "Box" ? "Circle" : drawType,
+        geometryFunction: drawType === "Box" ? createBox() : undefined,
+      });
+      map.addInteraction(newDraw);
+      drawInteractionRef.current = newDraw;
+      if (!interactionMode.startsWith("Measure"))
+        newDraw.on("drawend", () => setTimeout(pushToHistory, 0));
+    } else if (interactionMode === "Edit") {
+      const select = new Select({
+        layers: (l) => l.getSource() === drawingSourceRef.current,
+      });
+      const modify = new Modify({ features: select.getFeatures() });
+      modify.on("modifyend", () => setTimeout(pushToHistory, 0));
+      map.addInteraction(select);
+      map.addInteraction(modify);
+      selectInteractionRef.current = select;
+      modifyInteractionRef.current = modify;
+    }
+  }, [interactionMode, pushToHistory]);
 
   useEffect(() => {
-    const activelyLoadingDistricts = districts.filter(
-      (d) => d.checked && d.loading
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+    if (snapInteractionRef.current)
+      map.removeInteraction(snapInteractionRef.current);
+    if (isSnapActive) {
+      const newSnap = new Snap({ pixelTolerance: 20 });
+      map.addInteraction(newSnap);
+      snapInteractionRef.current = newSnap;
+    }
+  }, [isSnapActive]);
+
+  useEffect(() => {
+    const allChecked = districts.filter((d) => d.checked);
+    setParcelLoadedFeaturesCount(
+      allChecked.reduce(
+        (sum, d) => sum + (d.hasLoaded ? d.parcels.length : 0),
+        0
+      )
     );
-    const allCheckedDistricts = districts.filter((d) => d.checked);
-    const completedCheckedDistricts = allCheckedDistricts.filter(
-      (d) => d.hasLoaded
-    ).length;
-    const totalCheckedCount = allCheckedDistricts.length;
-    let progress =
-      totalCheckedCount > 0
-        ? Math.floor((completedCheckedDistricts / totalCheckedCount) * 100)
-        : 0;
-    let totalFeaturesLoaded = allCheckedDistricts.reduce(
-      (sum, d) => sum + (d.hasLoaded && d.parcels ? d.parcels.length : 0),
-      0
+    const completed = allChecked.filter((d) => d.hasLoaded).length;
+    setParcelLoadingProgress(
+      allChecked.length > 0
+        ? Math.floor((completed / allChecked.length) * 100)
+        : 0
     );
-    setParcelDistrictsLoading(activelyLoadingDistricts.length > 0);
-    setParcelLoadingProgress(progress);
-    setParcelLoadedFeaturesCount(totalFeaturesLoaded);
   }, [districts]);
 
-  useEffect(() => {
-    const currentlyCheckedDistrict = districts.find((d) => d.checked);
-    if (layerStates.building.isVisible) {
-      setSelectedDistrictForBuildings(
-        currentlyCheckedDistrict ? currentlyCheckedDistrict.name : null
-      );
-    } else {
-      setSelectedDistrictForBuildings(null);
-    }
-  }, [layerStates.building.isVisible, districts]);
-
+  const parcelDistrictsLoading = useMemo(
+    () => districts.some((d) => d.checked && d.loading),
+    [districts]
+  );
   const overallLoading = useMemo(
     () =>
-      (layerStates.road.isVisible && layerStates.road.isLoading) ||
-      (layerStates.building.isVisible && layerStates.building.isLoading) ||
-      parcelDistrictsLoading,
-    [layerStates.road, layerStates.building, parcelDistrictsLoading]
+      parcelDistrictsLoading ||
+      layerStates.road.isLoading ||
+      layerStates.building.isLoading,
+    [parcelDistrictsLoading, layerStates]
   );
-  const overallProgress = useMemo(() => {
-    if (parcelDistrictsLoading) return parcelLoadingProgress;
-    if (layerStates.road.isVisible && layerStates.road.isLoading) return 50;
-    if (layerStates.building.isVisible && layerStates.building.isLoading)
-      return 50;
-    if (!overallLoading && openLayersLoadedState) return 100;
-    return 0;
-  }, [
-    parcelDistrictsLoading,
-    parcelLoadingProgress,
-    layerStates,
-    overallLoading,
-    openLayersLoadedState,
-  ]);
   const overallError = useMemo(() => {
-    if (layerStates.road.error) return layerStates.road.error;
-    if (layerStates.building.error) return layerStates.building.error;
-    const parcelErrorDistrict = districts.find((d) => d.checked && d.error);
-    return parcelErrorDistrict
-      ? `ຂໍ້ຜິດພາດໃນການໂຫຼດຂໍ້ມູນດິນແຫ່ງ ${parcelErrorDistrict.displayName}: ${parcelErrorDistrict.error}`
-      : null;
-  }, [layerStates, districts]);
+    const parcelError = districts.find((d) => d.checked && d.error);
+    if (parcelError) return `Parcel Load Error: ${parcelError.error}`;
+    if (layerStates.road.error)
+      return `Road Load Error: ${layerStates.road.error}`;
+    if (layerStates.building.error)
+      return `Building Load Error: ${layerStates.building.error}`;
+    return null;
+  }, [districts, layerStates]);
 
   return (
     <div className="app-container">
@@ -426,27 +414,25 @@ function MapComponent() {
             <>
               <LoadingBar
                 isLoading={overallLoading}
-                loadingProgress={overallProgress}
-                loadedFeaturesCount={parcelLoadedFeaturesCount}
+                loadingProgress={parcelLoadingProgress}
               />
-              {overallError && (
-                <ErrorOverlay
-                  errorMessage={overallError}
-                  style={{ top: "3.5rem" }}
-                />
-              )}
+              {overallError && <ErrorOverlay errorMessage={overallError} />}
               <BaseMapSwitcher
                 map={mapInstanceRef.current}
                 selectedBaseMap={selectedBaseMap}
                 onSelectBaseMap={setSelectedBaseMap}
-                isSidebarCollapsed={isSidebarCollapsed}
               />
               <DrawingToolbar
-                ref={drawingToolbarRef}
-                onSelectDrawingMode={setDrawingMode}
-                onClearDrawing={clearDrawing}
-                currentMode={drawingMode}
-                initialPosition={{ x: 50, y: 50 }}
+                onSetInteractionMode={setInteractionMode}
+                currentInteractionMode={interactionMode}
+                onClearDrawing={clearDrawingAndMeasure}
+                isSnapActive={isSnapActive}
+                onToggleSnap={toggleSnap}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                onSave={handleSave}
+                canUndo={historyIndex > 0}
+                canRedo={historyIndex < history.length - 1}
               />
               <ParcelLayerControl
                 map={mapInstanceRef.current}
@@ -458,34 +444,25 @@ function MapComponent() {
               <RoadLayer
                 map={mapInstanceRef.current}
                 isVisible={layerStates.road.isVisible}
-                selectedProvince={selectedProvinceForRoads}
-                mapExtent={currentMapExtent}
                 onLoadingChange={handleRoadLoadingChange}
                 onErrorChange={handleRoadErrorChange}
               />
               <BuildingLayer
                 map={mapInstanceRef.current}
                 isVisible={layerStates.building.isVisible}
-                selectedDistrict={selectedDistrictForBuildings}
-                mapExtent={currentMapExtent}
                 onLoadingChange={handleBuildingLoadingChange}
                 onErrorChange={handleBuildingErrorChange}
               />
+              {selectedParcel && (
+                <ParcelInfoPanel
+                  parcel={selectedParcel}
+                  onClose={() => setSelectedParcel(null)}
+                />
+              )}
+              {mapInstanceRef.current && (
+                <CoordinateBar map={mapInstanceRef.current} />
+              )}
             </>
-          )}
-          {selectedParcel && (
-            <ParcelInfoPanel
-              parcel={selectedParcel}
-              onClose={() => setSelectedParcel(null)}
-            />
-          )}
-
-          {mapInstanceRef.current && (
-            <CoordinateBar
-              map={mapInstanceRef.current}
-              parcelLoadedFeaturesCount={parcelLoadedFeaturesCount}
-              layerStates={layerStates}
-            />
           )}
         </div>
         <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
@@ -502,9 +479,11 @@ function MapComponent() {
           </button>
           {!isSidebarCollapsed && (
             <>
-              <div className="layer-toggles-section">
-                <h3>ຊັ້ນຂໍ້ມູນ</h3>
-                <div className="toggle-group">
+              <div className="sidebar-section">
+                <div className="sidebar-section-header">
+                  <h3>ຊັ້ນຂໍ້ມູນ</h3>
+                </div>
+                <div className="layer-toggles-section">
                   <label className="toggle-label">
                     <input
                       type="checkbox"
@@ -535,7 +514,6 @@ function MapComponent() {
                 districts={districts}
                 onToggle={toggleDistrict}
                 onLoadData={handleLoadData}
-                isSidebarCollapsed={isSidebarCollapsed}
                 isExpanded={isDistrictsExpanded}
                 onToggleExpansion={() =>
                   setIsDistrictsExpanded(!isDistrictsExpanded)
@@ -544,7 +522,6 @@ function MapComponent() {
               />
               <ProvinceControls
                 openLayersLoaded={openLayersLoadedState}
-                isSidebarCollapsed={isSidebarCollapsed}
                 isExpanded={isProvincesExpanded}
                 onToggleExpansion={() =>
                   setIsProvincesExpanded(!isProvincesExpanded)

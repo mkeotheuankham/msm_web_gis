@@ -33,9 +33,7 @@ const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
 
       const apiUrl = "https://msmapi.up.railway.app/api/rest/buildings";
       console.log(
-        `[BuildingLayer] Attempting to fetch building data (Attempt ${
-          attempt + 1
-        }) from: ${apiUrl}`
+        `[BuildingLayer] Fetching building data (Attempt ${attempt + 1})`
       );
 
       const controller = new AbortController();
@@ -45,13 +43,10 @@ const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
         const response = await fetch(apiUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
 
-        if (!response.ok) {
+        if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
-        }
 
         const data = await response.json();
-        console.log("[BuildingLayer] API Data Received:", data);
-
         // --- FIX: Explicitly access the correct key from the API response ---
         const featureArray = data.cadastre_buildings_in_vientiane_bbox;
 
@@ -61,28 +56,28 @@ const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
           );
         }
 
-        console.log(
-          `[BuildingLayer] Found ${featureArray.length} items in the feature array.`
-        );
-
         const geoJsonFormat = new GeoJSON();
         const features = geoJsonFormat.readFeatures(
           {
             type: "FeatureCollection",
             features: featureArray.map((item) => ({
               type: "Feature",
-              geometry: item.wkb_geometry, // Use the correct geometry key
+              geometry: item.wkb_geometry,
               properties: { ...item, wkb_geometry: undefined },
             })),
           },
-          {
-            dataProjection: "EPSG:4326",
-            featureProjection: "EPSG:3857",
-          }
+          { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
         );
 
+        // --- FIX: Set a unique ID for each feature ---
+        features.forEach((feature, index) => {
+          const osmId = feature.get("osm_id");
+          // Use a prefix and index to guarantee a unique ID
+          feature.setId(`building-${osmId}-${index}`);
+        });
+
         console.log(
-          `[BuildingLayer] Successfully parsed ${features.length} building features.`
+          `[BuildingLayer] Parsed and set IDs for ${features.length} building features.`
         );
 
         sourceRef.current.clear();
@@ -101,9 +96,7 @@ const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
             delay
           );
         } else {
-          onErrorChange(
-            `Failed to load building data after ${MAX_RETRIES + 1} attempts.`
-          );
+          onErrorChange(`Failed after ${MAX_RETRIES + 1} attempts.`);
         }
       } finally {
         onLoadingChange(false);
@@ -115,7 +108,6 @@ const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
 
   useEffect(() => {
     if (!map) return;
-
     if (!layerRef.current) {
       layerRef.current = new VectorLayer({
         source: sourceRef.current,
@@ -125,9 +117,7 @@ const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
       });
       map.addLayer(layerRef.current);
     }
-
     layerRef.current.setVisible(isVisible);
-
     if (isVisible && sourceRef.current.getFeatures().length === 0) {
       fetchData();
     }

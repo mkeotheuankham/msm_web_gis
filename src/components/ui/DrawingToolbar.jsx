@@ -1,188 +1,249 @@
-import React, { forwardRef, useState, useEffect, useRef } from "react";
+import React, { useState, useCallback, useRef, forwardRef } from "react";
 import {
-  Pencil,
-  Square,
-  Minus,
-  Trash2,
   Circle,
+  Trash2,
+  GripVertical,
+  MousePointer,
   RectangleHorizontal,
-} from "lucide-react"; // ນໍາເຂົ້າໄອຄອນໃໝ່
+  Pencil,
+  Save,
+  Undo2,
+  Redo2,
+  Magnet,
+  Ruler,
+  Scissors,
+  GitMerge,
+} from "lucide-react";
 
-// ໃຊ້ forwardRef ເພື່ອໃຫ້ MapComponent ສາມາດອ້າງອີງໃສ່ DOM element ຂອງ toolbar
+// Custom SVG Icons
+const LineIcon = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <line x1="5" y1="19" x2="19" y2="5" />
+  </svg>
+);
+const PolygonIcon = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M14 2l4 4-3 11H9l-4-4 3-11h6z" />
+  </svg>
+);
+const MeasureAreaIcon = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M21 5H3M13 19H3M21 12H3M13 5h2l4 7-4 7h-2" />
+  </svg>
+);
+
 const DrawingToolbar = forwardRef(
   (
     {
-      onSelectDrawingMode,
+      onSetInteractionMode,
+      currentInteractionMode,
       onClearDrawing,
-      currentMode,
-      initialPosition = { x: 400, y: 10 }, // ກຳນົດຕຳແໜ່ງເລີ່ມຕົ້ນ (ຄ່າ default)
+      initialPosition,
+      isSnapActive,
+      onToggleSnap,
+      onUndo,
+      onRedo,
+      onSave,
+      canUndo,
+      canRedo,
     },
     ref
   ) => {
+    const [position, setPosition] = useState(
+      initialPosition || { x: 15, y: 120 }
+    );
     const [isDragging, setIsDragging] = useState(false);
-    const [position, setPosition] = useState(initialPosition);
-    const offset = useRef({ x: 0, y: 0 }); // ໃຊ້ useRef ເພື່ອເກັບຄ່າ offset ໃນເວລາລາກ
-    const toolbarLocalRef = useRef(null); // Ref ພາຍໃນສຳລັບ DOM element ຂອງ toolbar
+    const dragStartPos = useRef({ x: 0, y: 0 });
+    const elementStartPos = useRef({ x: 0, y: 0 });
 
-    // ລວມ ref ພາຍໃນກັບ ref ທີ່ໄດ້ຮັບຈາກ parent component (MapComponent)
-    // ນີ້ເຮັດໃຫ້ MapComponent ຍັງສາມາດອ້າງອີງໃສ່ toolbar ໄດ້
-    React.useImperativeHandle(ref, () => toolbarLocalRef.current);
-
-    // ຈັດການເຫດການເມົ້າລົງ (MouseDown) ເພື່ອເລີ່ມການລາກ
     const handleMouseDown = (e) => {
-      e.preventDefault(); // ປ້ອງກັນການເລືອກຂໍ້ຄວາມ ຫຼືພຶດຕິກຳເລີ່ມຕົ້ນຂອງ browser
       setIsDragging(true);
-      // ຄິດໄລ່ offset ລະຫວ່າງຈຸດຄລິກເມົ້າກັບຕຳແໜ່ງຂອງ toolbar
-      offset.current = {
-        x: e.clientX - position.x,
-        y: e.clientY - position.y,
-      };
+      dragStartPos.current = { x: e.clientX, y: e.clientY };
+      elementStartPos.current = { ...position };
+      e.preventDefault();
     };
 
-    // ຈັດການເຫດການເມົ້າເຄື່ອນທີ່ (MouseMove) ໃນຂະນະທີ່ກຳລັງລາກ
-    const handleMouseMove = (e) => {
-      if (!isDragging) return; // ຖ້າບໍ່ໄດ້ລາກ, ໃຫ້ອອກຈາກຟັງຊັນ
-      // ອັບເດດຕຳແໜ່ງໃໝ່ຂອງ toolbar ໂດຍອີງໃສ່ຕຳແໜ່ງເມົ້າປັດຈຸບັນ ແລະ offset
-      setPosition({
-        x: e.clientX - offset.current.x,
-        y: e.clientY - offset.current.y,
-      });
-    };
+    const handleMouseMove = useCallback(
+      (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - dragStartPos.current.x;
+        const dy = e.clientY - dragStartPos.current.y;
+        setPosition({
+          x: elementStartPos.current.x + dx,
+          y: elementStartPos.current.y + dy,
+        });
+      },
+      [isDragging]
+    );
 
-    // ຈັດການເຫດການເມົ້າຂຶ້ນ (MouseUp) ເພື່ອຢຸດການລາກ
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
+    const handleMouseUp = useCallback(() => setIsDragging(false), []);
 
-    // ຈັດການເຫດການສໍາຜັດລົງ (TouchStart) ເພື່ອເລີ່ມການລາກ (ສຳລັບໜ້າຈໍສຳຜັດ)
-    const handleTouchStart = (e) => {
-      e.preventDefault(); // ປ້ອງກັນການເລື່ອນໜ້າຈໍ (scrolling)
-      setIsDragging(true);
-      const touch = e.touches[0];
-      offset.current = {
-        x: touch.clientX - position.x,
-        y: touch.clientY - position.y,
-      };
-    };
-
-    // ຈັດການເຫດການສໍາຜັດເຄື່ອນທີ່ (TouchMove) ໃນຂະນະທີ່ກຳລັງລາກ (ສຳລັບໜ້າຈໍສຳຜັດ)
-    const handleTouchMove = (e) => {
-      if (!isDragging) return;
-      const touch = e.touches[0];
-      setPosition({
-        x: touch.clientX - offset.current.x,
-        y: touch.clientY - offset.current.y,
-      });
-    };
-
-    // ຈັດການເຫດການສໍາຜັດສິ້ນສຸດ (TouchEnd) ເພື່ອຢຸດການລາກ (ສຳລັບໜ້າຈໍສຳຜັດ)
-    const handleTouchEnd = () => {
-      setIsDragging(false);
-    };
-
-    // useEffect ສໍາລັບການເພີ່ມ/ລົບ Event Listeners ສໍາລັບການລາກ
-    useEffect(() => {
+    React.useEffect(() => {
       if (isDragging) {
-        // ເພີ່ມ event listeners ໃສ່ `document` ເພື່ອໃຫ້ສາມາດລາກອອກນອກ toolbar ໄດ້
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-        document.addEventListener("touchmove", handleTouchMove, {
-          passive: false,
-        }); // `passive: false` ເພື່ອປ້ອງກັນການເລື່ອນໜ້າຈໍ
-        document.addEventListener("touchend", handleTouchEnd);
-      } else {
-        // ລົບ event listeners ເມື່ອບໍ່ໄດ້ລາກ ເພື່ອປ້ອງກັນ Memory Leaks
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.removeEventListener("touchmove", handleTouchMove);
-        document.removeEventListener("touchend", handleTouchEnd);
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
       }
-
-      // Cleanup function: ຈະຖືກເຮັດວຽກເມື່ອ component unmount ຫຼື isDragging ປ່ຽນແປງ
       return () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.removeEventListener("touchmove", handleTouchMove);
-        document.removeEventListener("touchend", handleTouchEnd);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
       };
-    }, [isDragging, position]); // Dependencies: trigger effect ເມື່ອ isDragging ຫຼື position ປ່ຽນ
+    }, [isDragging, handleMouseMove, handleMouseUp]);
+
+    const mainTools = [
+      { type: "DrawPoint", icon: <MousePointer size={18} />, label: "ຈຸດ" },
+      { type: "DrawLineString", icon: <LineIcon />, label: "ເສັ້ນ" },
+      { type: "DrawPolygon", icon: <PolygonIcon />, label: "ພື້ນທີ່" },
+      { type: "DrawCircle", icon: <Circle size={18} />, label: "ວົງມົນ" },
+      {
+        type: "DrawBox",
+        icon: <RectangleHorizontal size={18} />,
+        label: "ກ່ອງ",
+      },
+      { type: "Edit", icon: <Pencil size={18} />, label: "ແກ້ໄຂ" },
+      { type: "MeasureLength", icon: <Ruler size={18} />, label: "ວັດແທກໄລຍະ" },
+      {
+        type: "MeasureArea",
+        icon: <MeasureAreaIcon />,
+        label: "ວັດແທກເນື້ອທີ່",
+      },
+    ];
+
+    const advancedTools = [
+      {
+        type: "Cut",
+        icon: <Scissors size={18} />,
+        label: "ຕັດ",
+        disabled: true,
+      },
+      {
+        type: "Joint",
+        icon: <GitMerge size={18} />,
+        label: "ເຊື່ອມ",
+        disabled: true,
+      },
+    ];
+
+    const handleModeSelect = (type) => {
+      const newMode = currentInteractionMode === type ? "None" : type;
+      onSetInteractionMode(newMode);
+    };
+
+    const handleAdvancedToolClick = (tool) => {
+      alert(`ເຄື່ອງມື '${tool.label}' ຍັງບໍ່ທັນເປີດໃຊ້ງານ.`);
+      console.warn(`Advanced tool '${tool.type}' is not yet implemented.`);
+    };
 
     return (
-      // ໃຊ້ toolbarLocalRef ເພື່ອອ້າງອີງໃສ່ DOM element
       <div
-        ref={toolbarLocalRef}
+        ref={ref}
         className={`drawing-tools-floating ${isDragging ? "dragging" : ""}`}
-        style={{ left: position.x, top: position.y }} // ໃຊ້ state 'position' ເພື່ອກຳນົດຕຳແໜ່ງ
-        onMouseDown={handleMouseDown} // ເພີ່ມ event handler ສໍາລັບເມົ້າລົງ
-        onTouchStart={handleTouchStart} // ເພີ່ມ event handler ສໍາລັບການສໍາຜັດລົງ
-        tabIndex={0} // ເຮັດໃຫ້ div ສາມາດ Focus ໄດ້, ສໍາຄັນສໍາລັບ Accessibility
-        aria-label="ແຖບເຄື່ອງມືແຕ້ມ" // Accessibility label
+        style={{ top: position.y, left: position.x }}
       >
-        <h3>Tools</h3> {/* CSS ຈະເຊື່ອງຫົວຂໍ້ນີ້ຕາມ default */}
+        <div
+          className="drag-handle"
+          onMouseDown={handleMouseDown}
+          title="ລາກເພື່ອຍ້າຍ"
+        >
+          <GripVertical size={20} />
+        </div>
         <div className="drawing-buttons-grid">
+          {mainTools.map((tool) => (
+            <button
+              key={tool.type}
+              onClick={() => handleModeSelect(tool.type)}
+              className={`drawing-button ${
+                currentInteractionMode === tool.type ? "active" : ""
+              }`}
+              title={tool.label}
+            >
+              {tool.icon}
+            </button>
+          ))}
+          {advancedTools.map((tool) => (
+            <button
+              key={tool.type}
+              onClick={() => handleAdvancedToolClick(tool)}
+              className="drawing-button"
+              title={`${tool.label} (ຍັງບໍ່ເປີດໃຊ້)`}
+              disabled={tool.disabled}
+            >
+              {tool.icon}
+            </button>
+          ))}
+        </div>
+        <div className="drawing-buttons-separator"></div>
+        <div className="drawing-buttons-grid utility-group">
           <button
-            className={`drawing-button ${
-              currentMode === "Point" ? "active" : ""
+            onClick={onToggleSnap}
+            className={`drawing-button snap-button ${
+              isSnapActive ? "active" : ""
             }`}
-            onClick={() => onSelectDrawingMode("Point")}
-            title="ແຕ້ມຈຸດ" // Updated title to Lao
-            aria-label="ແຕ້ມຈຸດ" // Accessibility label
+            title={isSnapActive ? "ປິດໂໝດ Snap" : "ເປີດໂໝດ Snap"}
           >
-            <Pencil size={18} />
-            <span className="drawing-button-text">ຈຸດ</span>
+            <Magnet size={18} />
           </button>
           <button
-            className={`drawing-button ${
-              currentMode === "LineString" ? "active" : ""
-            }`}
-            onClick={() => onSelectDrawingMode("LineString")}
-            title="ແຕ້ມເສັ້ນ" // Updated title to Lao
-            aria-label="ແຕ້ມເສັ້ນ" // Accessibility label
+            onClick={onUndo}
+            disabled={!canUndo}
+            className="drawing-button"
+            title="ຍ້ອນກັບ"
           >
-            <Minus size={18} />
-            <span className="drawing-button-text">ເສັ້ນ</span>
+            <Undo2 size={18} />
           </button>
           <button
-            className={`drawing-button ${
-              currentMode === "Polygon" ? "active" : ""
-            }`}
-            onClick={() => onSelectDrawingMode("Polygon")}
-            title="ແຕ້ມຮູບຫຼາຍລ່ຽມ" // Updated title to Lao
-            aria-label="ແຕ້ມຮູບຫຼາຍລ່ຽມ" // Accessibility label
+            onClick={onRedo}
+            disabled={!canRedo}
+            className="drawing-button"
+            title="ເຮັດຊໍ້າ"
           >
-            <Square size={18} />
-            <span className="drawing-button-text">ຮູບຫຼາຍລ່ຽມ</span>
+            <Redo2 size={18} />
           </button>
           <button
-            className={`drawing-button ${
-              currentMode === "Circle" ? "active" : ""
-            }`}
-            onClick={() => onSelectDrawingMode("Circle")}
-            title="ແຕ້ມວົງມົນ" // New button for Circle
-            aria-label="ແຕ້ມວົງມົນ"
+            onClick={onSave}
+            className="drawing-button utility-button"
+            title="ບັນທຶກ"
           >
-            <Circle size={18} />
-            <span className="drawing-button-text">ວົງມົນ</span>
+            <Save size={18} />
           </button>
           <button
-            className={`drawing-button ${
-              currentMode === "Box" ? "active" : ""
-            }`}
-            onClick={() => onSelectDrawingMode("Box")}
-            title="ແຕ້ມສີ່ຫຼ່ຽມ" // New button for Box/Rectangle
-            aria-label="ແຕ້ມສີ່ຫຼ່ຽມ"
-          >
-            <RectangleHorizontal size={18} />
-            <span className="drawing-button-text">ສີ່ຫຼ່ຽມ</span>
-          </button>
-          <button
-            className="drawing-button clear-button"
             onClick={onClearDrawing}
-            title="ລຶບຮູບແຕ້ມທັງໝົດ" // Updated title to Lao
-            aria-label="ລຶບຮູບແຕ້ມທັງໝົດ" // Accessibility label
+            className="drawing-button clear-button"
+            title="ລ້າງທັງໝົດ"
           >
             <Trash2 size={18} />
-            <span className="drawing-button-text">ລຶບທັງໝົດ</span>
           </button>
         </div>
       </div>

@@ -2,18 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { toLonLat } from "ol/proj";
 import proj4 from "proj4";
 import { unByKey } from "ol/Observable";
-import Snap from "ol/interaction/Snap";
-import VectorLayer from "ol/layer/Vector";
-import VectorSource from "ol/source/Vector";
-import {
-  MapPin,
-  Copy,
-  History,
-  X,
-  Compass,
-  Trash2,
-  Magnet,
-} from "lucide-react";
+import { MapPin, Copy, History, X, Compass, Trash2 } from "lucide-react";
 
 // Helper functions for UTM conversion
 const getUtmZone = (lon) => {
@@ -25,9 +14,8 @@ const getUtmProjString = (zone, isNorth) => {
   return `+proj=utm +zone=${zone} +datum=WGS84 +units=m +no_defs${hemi}`;
 };
 
-const CoordinateBar = ({ map, parcelLoadedFeaturesCount, layerStates }) => {
+const CoordinateBar = ({ map }) => {
   const [isPanelVisible, setIsPanelVisible] = useState(false);
-  const [isSnapActive, setIsSnapActive] = useState(false);
   const [coords, setCoords] = useState({
     easting: null,
     northing: null,
@@ -41,12 +29,9 @@ const CoordinateBar = ({ map, parcelLoadedFeaturesCount, layerStates }) => {
 
   const historyCounterRef = useRef(1);
   const panelRef = useRef(null);
-  const snapInteractionRef = useRef(null);
-  const snapSourceRef = useRef(new VectorSource()); // Dedicated source for snapping
 
   const handleClosePanel = () => {
     setIsPanelVisible(false);
-    setIsSnapActive(false);
   };
 
   const formatCoords = useCallback((coordObj) => {
@@ -94,58 +79,6 @@ const CoordinateBar = ({ map, parcelLoadedFeaturesCount, layerStates }) => {
     setHistory([]);
     historyCounterRef.current = 1;
   };
-
-  // --- REVISED and FINAL useEffect for managing Snap interaction ---
-  useEffect(() => {
-    if (!map) return;
-
-    // Always remove the old snap interaction first to ensure a clean state
-    if (snapInteractionRef.current) {
-      map.removeInteraction(snapInteractionRef.current);
-      snapInteractionRef.current = null;
-    }
-
-    if (isSnapActive) {
-      console.log("Snap Mode ON. Re-populating snap source.");
-
-      // Clear the dedicated snap source before adding new features
-      snapSourceRef.current.clear();
-
-      // Find all features from all vector layers and add them to our dedicated source
-      const allLayers = map.getLayers().getArray();
-      for (const layer of allLayers) {
-        if (layer instanceof VectorLayer) {
-          const source = layer.getSource();
-          if (source && typeof source.getFeatures === "function") {
-            const features = source.getFeatures();
-            if (features.length > 0) {
-              snapSourceRef.current.addFeatures(features);
-            }
-          }
-        }
-      }
-
-      console.log(
-        `Snap source now contains ${
-          snapSourceRef.current.getFeatures().length
-        } features.`
-      );
-
-      if (snapSourceRef.current.getFeatures().length > 0) {
-        const newSnap = new Snap({
-          source: snapSourceRef.current, // Use our dedicated, populated source
-          pixelTolerance: 20, // A larger tolerance for easier snapping
-        });
-
-        map.addInteraction(newSnap);
-        snapInteractionRef.current = newSnap;
-      } else {
-        console.warn(
-          "Snap active, but no features were available to populate the snap source."
-        );
-      }
-    }
-  }, [map, isSnapActive, parcelLoadedFeaturesCount, layerStates]); // Re-run when snap is toggled or features change
 
   useEffect(() => {
     if (!map) return;
@@ -212,14 +145,6 @@ const CoordinateBar = ({ map, parcelLoadedFeaturesCount, layerStates }) => {
         <div ref={panelRef} className="coordinate-bar">
           <div className="coordinate-bar-header">
             <h3>Coordinate Tools</h3>
-            <button
-              onClick={() => setIsSnapActive((prev) => !prev)}
-              className={`snap-toggle-button ${isSnapActive ? "active" : ""}`}
-              title={isSnapActive ? "ປິດໂໝດ Snap" : "ເປີດໂໝດ Snap"}
-            >
-              <Magnet size={14} />
-              <span>{isSnapActive ? "Snap ON" : "Snap OFF"}</span>
-            </button>
             <button
               onClick={handleClosePanel}
               className="close-panel-button"
@@ -290,7 +215,7 @@ const CoordinateBar = ({ map, parcelLoadedFeaturesCount, layerStates }) => {
                       <div className="history-item-coords">
                         <span>{formatCoords(item)}</span>
                         <span className="history-item-utm">
-                          UTM: {item.easting}E, {item.northing}N
+                          UTM: {item.easting}E, ${item.northing}N
                         </span>
                       </div>
                       <div className="history-item-actions">

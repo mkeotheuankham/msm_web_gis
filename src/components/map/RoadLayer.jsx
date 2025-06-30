@@ -15,7 +15,7 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
   const isFetchingRef = useRef(false);
 
   const roadStyle = useMemo(
-    () => new Style({ stroke: new Stroke({ color: "#DAA520", width: 2.5 }) }), // GoldenRod color, slightly thicker
+    () => new Style({ stroke: new Stroke({ color: "#DAA520", width: 2.5 }) }),
     []
   );
 
@@ -28,11 +28,7 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
       clearTimeout(retryTimeoutIdRef.current);
 
       const apiUrl = "https://msmapi.up.railway.app/api/rest/roads";
-      console.log(
-        `[RoadLayer] Attempting to fetch road data (Attempt ${
-          attempt + 1
-        }) from: ${apiUrl}`
-      );
+      console.log(`[RoadLayer] Fetching road data (Attempt ${attempt + 1})`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
@@ -41,13 +37,10 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
         const response = await fetch(apiUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
 
-        if (!response.ok) {
+        if (!response.ok)
           throw new Error(`HTTP error! Status: ${response.status}`);
-        }
 
         const data = await response.json();
-        console.log("[RoadLayer] API Data Received:", data);
-
         // --- FIX: Explicitly access the correct key from the API response ---
         const featureArray = data.cadastre_roads_in_vientiane_bbox;
 
@@ -56,10 +49,6 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
             "Invalid data format: 'cadastre_roads_in_vientiane_bbox' array not found."
           );
         }
-
-        console.log(
-          `[RoadLayer] Found ${featureArray.length} items in the feature array.`
-        );
 
         const geoJsonFormat = new GeoJSON();
         const features = geoJsonFormat.readFeatures(
@@ -71,14 +60,18 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
               properties: { ...item, wkb_geometry: undefined },
             })),
           },
-          {
-            dataProjection: "EPSG:4326",
-            featureProjection: "EPSG:3857",
-          }
+          { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
         );
 
+        // --- FIX: Set a unique ID for each feature ---
+        features.forEach((feature, index) => {
+          const osmId = feature.get("osm_id");
+          // Use a prefix and index to guarantee a unique ID
+          feature.setId(`road-${osmId}-${index}`);
+        });
+
         console.log(
-          `[RoadLayer] Successfully parsed ${features.length} road features.`
+          `[RoadLayer] Parsed and set IDs for ${features.length} road features.`
         );
 
         sourceRef.current.clear();
@@ -97,9 +90,7 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
             delay
           );
         } else {
-          onErrorChange(
-            `Failed to load road data after ${MAX_RETRIES + 1} attempts.`
-          );
+          onErrorChange(`Failed after ${MAX_RETRIES + 1} attempts.`);
         }
       } finally {
         onLoadingChange(false);
@@ -111,7 +102,6 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
 
   useEffect(() => {
     if (!map) return;
-
     if (!layerRef.current) {
       layerRef.current = new VectorLayer({
         source: sourceRef.current,
@@ -121,9 +111,7 @@ const RoadLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
       });
       map.addLayer(layerRef.current);
     }
-
     layerRef.current.setVisible(isVisible);
-
     if (isVisible && sourceRef.current.getFeatures().length === 0) {
       fetchData();
     }

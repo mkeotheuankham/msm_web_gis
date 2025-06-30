@@ -10,28 +10,17 @@
 
 :root {
   --color-primary-bg: rgba(26, 26, 26, 0.85);
-  --color-secondary-bg: rgba(
-    38,
-    38,
-    38,
-    0.95
-  ); /* Slightly lighter for better depth */
-  --color-inset-bg: rgba(0, 0, 0, 0.3); /* For inset sections */
+  --color-secondary-bg: rgba(38, 38, 38, 0.95);
+  --color-inset-bg: rgba(0, 0, 0, 0.3);
   --color-map-overlay-bg: rgba(0, 0, 0, 0.7);
   --color-text-light: white;
   --color-text-muted: #a0a0a0;
-  --color-border-light: rgba(
-    255,
-    255,
-    255,
-    0.15
-  ); /* Slightly more visible border */
+  --color-border-light: rgba(255, 255, 255, 0.15);
   --color-shadow-dark: rgba(0, 0, 0, 0.4);
   --color-accent-blue: #4f46e5;
   --color-accent-blue-hover: #635bff;
   --color-error-red: rgba(214, 48, 49, 0.8);
   --color-success-green: rgba(40, 167, 69, 0.8);
-  --color-warning-yellow: yellow;
 }
 
 html,
@@ -48,7 +37,7 @@ body,
   -moz-osx-font-smoothing: grayscale;
   display: flex;
   flex-direction: column;
-  background-color: #1a1a1a; /* Dark background for the whole page */
+  background-color: #1a1a1a;
 }
 
 /* ==========================================================================
@@ -127,7 +116,7 @@ body,
    ========================================================================== */
 
 .sidebar {
-  width: 320px; /* Slightly wider */
+  width: 320px;
   background: var(--color-secondary-bg);
   color: var(--color-text-light);
   padding: 0.8rem;
@@ -135,10 +124,9 @@ body,
   box-shadow: 0 8px 25px var(--color-shadow-dark);
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Increased gap */
+  gap: 1rem;
   height: 100%;
-  transition: width 0.3s ease-in-out, padding 0.3s ease-in-out,
-    background-color 0.5s ease;
+  transition: width 0.3s ease-in-out, padding 0.3s ease-in-out;
   flex-shrink: 0;
   position: relative;
   overflow-y: auto;
@@ -185,7 +173,6 @@ body,
   border-radius: 8px;
 }
 
-/* --- Sidebar Section Wrapper --- */
 .sidebar-section {
   background: var(--color-inset-bg);
   padding: 0.8rem;
@@ -203,7 +190,6 @@ body,
   border-bottom: 1px solid var(--color-border-light);
   cursor: pointer;
 }
-
 .sidebar-section-header h3 {
   margin: 0;
   font-size: 1rem;
@@ -228,22 +214,19 @@ body,
   margin: 0;
 }
 
-/* --- Base class for interactive items in the sidebar --- */
 .sidebar-interactive-item {
   display: flex;
   align-items: center;
-  gap: 0.6rem; /* Adjusted gap */
-  padding: 0.6rem; /* Adjusted padding */
+  gap: 0.6rem;
+  padding: 0.6rem;
   border-radius: 6px;
   transition: background-color 0.2s ease;
   cursor: pointer;
-  font-size: 0.85rem; /* Adjusted font size */
+  font-size: 0.85rem;
 }
-
 .sidebar-interactive-item:hover {
   background-color: rgba(255, 255, 255, 0.08);
 }
-
 .sidebar-interactive-item .item-text {
   flex-grow: 1;
   white-space: nowrap;
@@ -251,14 +234,24 @@ body,
   text-overflow: ellipsis;
 }
 
-/* Applying base style to existing elements */
+/* Layer Toggles */
 .layer-toggles-section .toggle-group {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
 }
 .layer-toggles-section .toggle-label {
-  composes: sidebar-interactive-item;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.layer-toggles-section .toggle-label:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 .layer-toggles-section input[type="checkbox"] {
   accent-color: var(--color-accent-blue);
@@ -268,16 +261,25 @@ body,
   flex-shrink: 0;
 }
 
-/* --- UPDATED District Styles --- */
+/* District List */
 .district-grid {
-  display: grid; /* Changed to grid */
-  grid-template-columns: 1fr 1fr; /* Two columns */
-  gap: 0.5rem; /* Gap between items */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
 }
 .district-item label {
-  composes: sidebar-interactive-item;
-  justify-content: flex-start; /* Align items to the start */
-  padding: 0.5rem; /* Slightly smaller padding for grid items */
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  font-size: 0.85rem;
+  justify-content: flex-start;
+}
+.district-item label:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 .district-item input[type="checkbox"] {
   flex-shrink: 0;
@@ -294,17 +296,17 @@ body,
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.district-item .item-text {
-  /* To hold the color and name together */
+.district-item-content {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  overflow: hidden; /* Prevent text from overflowing */
+  overflow: hidden;
 }
 .district-item .status-icons {
-  margin-left: auto; /* Push icons to the end */
+  margin-left: auto;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 /* Province Buttons */
@@ -314,7 +316,14 @@ body,
   gap: 0.5rem;
 }
 .province-button {
-  composes: sidebar-interactive-item;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  font-size: 0.85rem;
   background-color: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--color-text-light);
@@ -335,7 +344,7 @@ body,
   box-shadow: none;
 }
 
-/* Primary Action Button (Load Data) */
+/* Load Data Button */
 .load-data-button {
   display: flex;
   align-items: center;
@@ -375,73 +384,49 @@ body,
 }
 
 /* ==========================================================================
-   Map Overlays (Drawing, BaseMap, Info Panels, etc.)
+   Map Overlays
    ========================================================================== */
-.drawing-tools-floating {
+.map-overlay-status {
   position: absolute;
-  z-index: 1001;
-  background: var(--color-map-overlay-bg);
-  color: var(--color-text-light);
-  padding: 0.4rem;
-  border-radius: 12px;
-  box-shadow: 0 5px 15px var(--color-shadow-dark);
-  width: 50px;
-  transition: all 0.3s ease;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-}
-.drawing-tools-floating.dragging {
-  cursor: grabbing;
-}
-.drawing-tools-floating:hover {
-  width: 160px;
-  background: rgba(0, 0, 0, 0.95);
-  box-shadow: 0 10px 30px var(--color-shadow-dark);
-}
-.drawing-buttons-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  width: 100%;
-}
-.drawing-button {
-  padding: 0.4rem;
-  font-weight: 500;
-  font-size: 0.85rem;
-  background-color: transparent;
-  color: var(--color-text-light);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 10px 15px;
   border-radius: 8px;
-  border: 1px solid var(--color-border-light);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+  z-index: 1002;
+  font-size: 1rem;
   white-space: nowrap;
 }
-.drawing-tools-floating:hover .drawing-button {
-  justify-content: flex-start;
+.map-overlay-status.error {
+  background-color: var(--color-error-red);
 }
-.drawing-button:hover {
-  background-color: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.6);
-}
-.drawing-button.active {
+
+.copy-success-message {
+  position: fixed;
+  bottom: 80px;
+  right: 1rem;
   background-color: var(--color-success-green);
-  border-color: var(--color-success-green);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 1002;
+  font-size: 0.9em;
+  animation: fadeOut 2s forwards;
 }
-.drawing-button .drawing-button-text {
-  display: none;
-}
-.drawing-tools-floating:hover .drawing-button .drawing-button-text {
-  display: inline;
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    display: none;
+  }
 }
 
 .base-map-switcher {
@@ -477,6 +462,96 @@ body,
   background-color: rgba(0, 0, 0, 0.5);
 }
 
+/* Drawing Toolbar */
+.drawing-tools-floating {
+  position: absolute;
+  z-index: 1001;
+  background: var(--color-secondary-bg);
+  color: var(--color-text-light);
+  border-radius: 8px;
+  box-shadow: 0 5px 15px var(--color-shadow-dark);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  user-select: none;
+}
+.drawing-tools-floating.dragging {
+  cursor: grabbing;
+  opacity: 0.8;
+}
+.drag-handle {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 6px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+}
+.drawing-buttons-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+}
+.drawing-buttons-separator {
+  height: 1px;
+  background-color: var(--color-border-light);
+  margin: 4px 8px;
+}
+.drawing-button {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  color: var(--color-text-light);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 48px;
+  height: 48px;
+}
+.drawing-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: transparent;
+}
+.drawing-button:disabled:hover {
+  background-color: transparent;
+  border-color: transparent;
+}
+.drawing-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-border-light);
+}
+.drawing-button.active {
+  background-color: var(--color-accent-blue);
+  color: white;
+  border-color: var(--color-accent-blue-hover);
+}
+.drawing-button .drawing-button-text {
+  display: none;
+}
+.drawing-button.utility-button:hover {
+  background-color: var(--color-success-green);
+}
+.drawing-button.clear-button {
+  background-color: rgba(214, 48, 49, 0.2);
+}
+.drawing-button.clear-button:hover {
+  background-color: var(--color-error-red);
+  color: white;
+}
+.drawing-button.snap-button.active {
+  background-color: var(--color-accent-blue);
+  color: white;
+}
+
+/* Parcel Info Panel */
 .parcel-info-panel {
   position: absolute;
   top: 1rem;
@@ -534,52 +609,7 @@ body,
   word-break: break-word;
 }
 
-.copy-success-message {
-  position: fixed;
-  bottom: 80px;
-  right: 1rem;
-  background-color: var(--color-success-green);
-  color: white;
-  padding: 8px 15px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  z-index: 1002;
-  font-size: 0.9em;
-  animation: fadeOut 2s forwards;
-}
-@keyframes fadeOut {
-  0% {
-    opacity: 1;
-  }
-  80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    display: none;
-  }
-}
-
-.map-overlay-status {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  z-index: 1002;
-  font-size: 1rem;
-  white-space: nowrap;
-}
-.map-overlay-status.error {
-  background-color: var(--color-error-red);
-}
-
-/* ==========================================================================
-   Coordinate Bar (FAB Style)
-   ========================================================================== */
+/* Coordinate Bar (FAB Style) */
 .coordinate-widget-container {
   position: absolute;
   bottom: 1rem;
@@ -632,7 +662,7 @@ body,
   font-weight: 500;
   flex-grow: 1;
 }
-.snap-toggle-button {
+.coordinate-bar-header .snap-toggle-button {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -647,16 +677,16 @@ body,
   transition: all 0.2s ease;
   white-space: nowrap;
 }
-.snap-toggle-button:hover {
+.coordinate-bar-header .snap-toggle-button:hover {
   color: var(--color-text-light);
   border-color: var(--color-text-light);
 }
-.snap-toggle-button.active {
+.coordinate-bar-header .snap-toggle-button.active {
   color: white;
   background-color: var(--color-accent-blue);
   border-color: var(--color-accent-blue);
 }
-.snap-toggle-button.active:hover {
+.coordinate-bar-header .snap-toggle-button.active:hover {
   background-color: var(--color-accent-blue-hover);
 }
 .coordinate-bar-header .close-panel-button {
@@ -769,6 +799,17 @@ body,
   text-align: center;
   padding: 10px;
 }
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 
 /* ==========================================================================
    Responsive Styles
@@ -802,17 +843,6 @@ body,
     top: 0.5rem;
     left: 50%;
     transform: translateX(-50%);
-    width: 45px;
-    padding: 0.3rem;
-  }
-  .drawing-tools-floating:hover {
-    width: 140px;
-  }
-  .drawing-button .drawing-button-text {
-    display: none;
-  }
-  .drawing-tools-floating:hover .drawing-button .drawing-button-text {
-    display: inline;
   }
   .parcel-info-panel {
     width: 95%;

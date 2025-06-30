@@ -1,3 +1,5 @@
+// src/components/ui/DrawingToolbar.jsx
+
 import React, { useState, useCallback, useRef, forwardRef } from "react";
 import {
   Circle,
@@ -15,12 +17,15 @@ import {
   GitMerge,
 } from "lucide-react";
 
+// --- CHANGE: Reduce icon size ---
+const ICON_SIZE = 16;
+
 // Custom SVG Icons
 const LineIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="18"
-    height="18"
+    width={ICON_SIZE}
+    height={ICON_SIZE}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -35,8 +40,8 @@ const LineIcon = (props) => (
 const PolygonIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="18"
-    height="18"
+    width={ICON_SIZE}
+    height={ICON_SIZE}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -51,8 +56,8 @@ const PolygonIcon = (props) => (
 const MeasureAreaIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="18"
-    height="18"
+    width={ICON_SIZE}
+    height={ICON_SIZE}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -123,17 +128,29 @@ const DrawingToolbar = forwardRef(
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
     const mainTools = [
-      { type: "DrawPoint", icon: <MousePointer size={18} />, label: "ຈຸດ" },
+      {
+        type: "DrawPoint",
+        icon: <MousePointer size={ICON_SIZE} />,
+        label: "ຈຸດ",
+      },
       { type: "DrawLineString", icon: <LineIcon />, label: "ເສັ້ນ" },
       { type: "DrawPolygon", icon: <PolygonIcon />, label: "ພື້ນທີ່" },
-      { type: "DrawCircle", icon: <Circle size={18} />, label: "ວົງມົນ" },
+      {
+        type: "DrawCircle",
+        icon: <Circle size={ICON_SIZE} />,
+        label: "ວົງມົນ",
+      },
       {
         type: "DrawBox",
-        icon: <RectangleHorizontal size={18} />,
+        icon: <RectangleHorizontal size={ICON_SIZE} />,
         label: "ກ່ອງ",
       },
-      { type: "Edit", icon: <Pencil size={18} />, label: "ແກ້ໄຂ" },
-      { type: "MeasureLength", icon: <Ruler size={18} />, label: "ວັດແທກໄລຍະ" },
+      { type: "Edit", icon: <Pencil size={ICON_SIZE} />, label: "ແກ້ໄຂ" },
+      {
+        type: "MeasureLength",
+        icon: <Ruler size={ICON_SIZE} />,
+        label: "ວັດແທກໄລຍະ",
+      },
       {
         type: "MeasureArea",
         icon: <MeasureAreaIcon />,
@@ -144,13 +161,13 @@ const DrawingToolbar = forwardRef(
     const advancedTools = [
       {
         type: "Cut",
-        icon: <Scissors size={18} />,
+        icon: <Scissors size={ICON_SIZE} />,
         label: "ຕັດ",
         disabled: true,
       },
       {
         type: "Joint",
-        icon: <GitMerge size={18} />,
+        icon: <GitMerge size={ICON_SIZE} />,
         label: "ເຊື່ອມ",
         disabled: true,
       },
@@ -177,7 +194,7 @@ const DrawingToolbar = forwardRef(
           onMouseDown={handleMouseDown}
           title="ລາກເພື່ອຍ້າຍ"
         >
-          <GripVertical size={20} />
+          <GripVertical size={18} />
         </div>
         <div className="drawing-buttons-grid">
           {mainTools.map((tool) => (
@@ -213,7 +230,7 @@ const DrawingToolbar = forwardRef(
             }`}
             title={isSnapActive ? "ປິດໂໝດ Snap" : "ເປີດໂໝດ Snap"}
           >
-            <Magnet size={18} />
+            <Magnet size={ICON_SIZE} />
           </button>
           <button
             onClick={onUndo}
@@ -221,7 +238,7 @@ const DrawingToolbar = forwardRef(
             className="drawing-button"
             title="ຍ້ອນກັບ"
           >
-            <Undo2 size={18} />
+            <Undo2 size={ICON_SIZE} />
           </button>
           <button
             onClick={onRedo}
@@ -229,21 +246,21 @@ const DrawingToolbar = forwardRef(
             className="drawing-button"
             title="ເຮັດຊໍ້າ"
           >
-            <Redo2 size={18} />
+            <Redo2 size={ICON_SIZE} />
           </button>
           <button
             onClick={onSave}
             className="drawing-button utility-button"
             title="ບັນທຶກ"
           >
-            <Save size={18} />
+            <Save size={ICON_SIZE} />
           </button>
           <button
             onClick={onClearDrawing}
             className="drawing-button clear-button"
             title="ລ້າງທັງໝົດ"
           >
-            <Trash2 size={18} />
+            <Trash2 size={ICON_SIZE} />
           </button>
         </div>
       </div>

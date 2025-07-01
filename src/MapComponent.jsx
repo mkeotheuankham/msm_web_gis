@@ -76,8 +76,12 @@ function MapComponent({
     if (!currentMapContainer || mapInstanceRef.current) return;
 
     const osmLayer = new TileLayer({
-      source: new OSM(),
+      source: new XYZ({
+        // Use XYZ source to specify a different URL
+        url: "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+      }),
       properties: { name: "OSM" },
+      visible: selectedBaseMap === "OSM",
     });
     const googleSatLayer = new TileLayer({
       source: new XYZ({
@@ -85,7 +89,7 @@ function MapComponent({
         maxZoom: 20,
       }),
       properties: { name: "Google Satellite" },
-      visible: false,
+      visible: selectedBaseMap === "Google Satellite", // Changed line
     });
     const googleHybridLayer = new TileLayer({
       source: new XYZ({
@@ -93,7 +97,7 @@ function MapComponent({
         maxZoom: 20,
       }),
       properties: { name: "Google Hybrid" },
-      visible: false,
+      visible: selectedBaseMap === "Google Hybrid", // Changed line
     });
 
     const drawingLayer = new VectorLayer({
@@ -149,18 +153,34 @@ function MapComponent({
     onMapLoaded.setOpenLayersLoaded(true);
     pushToHistory();
 
-    const resizeObserver = new ResizeObserver(() => map.updateSize());
+    // Ensure map updates its size after rendering and base layer is set
+    const updateMapAndRedraw = () => {
+      if (mapRef.current) {
+        map.updateSize();
+        // This forces a redraw, which might trigger tile loading
+        map.renderSync();
+        console.log(
+          "[MapComponent] Map size updated and re-rendered after initial setup."
+        );
+      }
+    };
+    // Use requestAnimationFrame for more reliable post-render updates
+    let animationFrameId = requestAnimationFrame(updateMapAndRedraw);
+
+    const resizeObserver = new ResizeObserver(() => {
+      console.log("[MapComponent] Container resized, updating map size.");
+      map.updateSize();
+    });
     resizeObserver.observe(currentMapContainer);
 
-    // Force map to update its size after the initial render to prevent black screen
-    const timerId = setTimeout(() => map.updateSize(), 100);
-
     return () => {
-      clearTimeout(timerId);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
       map.setTarget(undefined);
       resizeObserver.disconnect();
     };
-  }, [onMapLoaded, pushToHistory]);
+  }, [onMapLoaded, pushToHistory, selectedBaseMap]); // Added selectedBaseMap to dependencies
 
   const handleUndo = useCallback(() => {
     if (historyIndex > 0) {

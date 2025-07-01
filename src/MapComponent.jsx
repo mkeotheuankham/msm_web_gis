@@ -1,5 +1,4 @@
 // src/MapComponent.jsx
-
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Map from "ol/Map";
 import View from "ol/View";

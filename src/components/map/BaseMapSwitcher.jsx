@@ -1,58 +1,59 @@
-import React from "react";
+// src/components/map/BaseMapSwitcher.jsx (Full Stable Version)
 
-const BaseMapSwitcher = ({
-  map,
-  selectedBaseMap,
-  onSelectBaseMap,
-  isSidebarCollapsed,
-}) => {
-  if (!map) {
-    console.warn(
-      "BaseMapSwitcher: Map instance not yet available, rendering null."
-    );
-    return null;
-  }
+import React, { useEffect, useRef } from "react";
+import TileLayer from "ol/layer/Tile";
+import XYZ from "ol/source/XYZ";
 
-  // --- IMPROVEMENT START ---
-  // ກໍານົດຊື່ຂອງ Base Layers ໄວ້ເພື່ອໃຫ້ງ່າຍຕໍ່ການກວດສອບ
-  const baseLayerNames = ["OSM", "Google Satellite", "Google Hybrid"];
+const BaseMapSwitcher = ({ map, selectedBaseMap, onSelectBaseMap }) => {
+  const currentBaseLayerRef = useRef(null);
 
-  // ດຶງຂໍ້ມູນຊັ້ນພື້ນຖານຈາກ map object
-  const baseLayers = map
-    .getLayers()
-    .getArray()
-    .filter((layer) => baseLayerNames.includes(layer.get("name")));
+  useEffect(() => {
+    if (!map) return;
 
-  const handleBaseMapChange = (event) => {
-    const newBaseMapName = event.target.value;
-    onSelectBaseMap(newBaseMapName);
-
-    // ປັບປຸງ Logic: ໃຫ້วนลูปສະເພາະ Base Layers
-    // ເພື່ອເປີດ/ປິດການເບິ່ງເຫັນ, ຈະບໍ່ມີຜົນກະທົບກັບ layers ອື່ນ (parcels, roads, etc.)
-    map.getLayers().forEach((layer) => {
-      const layerName = layer.get("name");
-      if (baseLayerNames.includes(layerName)) {
-        layer.setVisible(layerName === newBaseMapName);
+    const getSourceUrl = (mapName) => {
+      switch (mapName) {
+        case "Google Satellite":
+          return "https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}";
+        case "Google Hybrid":
+          return "https://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}";
+        case "OSM":
+        default:
+          return "https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png";
       }
+    };
+
+    if (currentBaseLayerRef.current) {
+      map.removeLayer(currentBaseLayerRef.current);
+    }
+
+    const newBaseLayer = new TileLayer({
+      source: new XYZ({ url: getSourceUrl(selectedBaseMap) }),
+      zIndex: -1, // Ensure base map is always at the bottom
     });
-  };
-  // --- IMPROVEMENT END ---
+
+    map.getLayers().insertAt(0, newBaseLayer);
+    currentBaseLayerRef.current = newBaseLayer;
+
+    return () => {
+      if (map && newBaseLayer) {
+        try {
+          map.removeLayer(newBaseLayer);
+        } catch (e) {
+          // Ignore errors on cleanup if map is already destroyed
+        }
+      }
+    };
+  }, [map, selectedBaseMap]);
 
   return (
-    <div
-      className={`base-map-switcher ${isSidebarCollapsed ? "collapsed" : ""}`}
-    >
-      <label htmlFor="baseMapSelect">Base Map:</label>
+    <div className="base-map-switcher">
       <select
-        id="baseMapSelect"
         value={selectedBaseMap}
-        onChange={handleBaseMapChange}
+        onChange={(e) => onSelectBaseMap(e.target.value)}
       >
-        {baseLayers.map((layer) => (
-          <option key={layer.get("name")} value={layer.get("name")}>
-            {layer.get("name")}
-          </option>
-        ))}
+        <option value="OSM">OSM</option>
+        <option value="Google Satellite">Google Satellite</option>
+        <option value="Google Hybrid">Google Hybrid</option>
       </select>
     </div>
   );

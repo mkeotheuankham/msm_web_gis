@@ -1,3 +1,5 @@
+// src/components/map/ParcelLayerControl.jsx (Your original and correct version)
+
 import React, { useEffect, useRef, useCallback } from "react";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -34,9 +36,6 @@ const getParcelStyle = (feature, resolution) => {
   return styles;
 };
 
-const MAX_RETRIES = 3;
-const BASE_RETRY_DELAY = 1000;
-
 const ParcelLayerControl = ({
   map,
   districts,
@@ -48,12 +47,7 @@ const ParcelLayerControl = ({
   const clickKeyRef = useRef(null);
 
   const loadParcelData = useCallback(
-    async (districtToLoad, attempt = 0) => {
-      console.log(
-        `[ParcelLayerControl] Loading: ${districtToLoad.displayName} (Attempt ${
-          attempt + 1
-        })`
-      );
+    async (districtToLoad) => {
       setDistricts((prev) =>
         prev.map((d) =>
           d.name === districtToLoad.name
@@ -70,73 +64,53 @@ const ParcelLayerControl = ({
         if (!parcelsArray || !Array.isArray(parcelsArray))
           throw new Error(`Invalid data format.`);
 
-        const geoJsonFormat = new GeoJSON();
-        const features = [];
-        parcelsArray.forEach((item) => {
-          if (!item.geom) return;
-
-          const olFeature = geoJsonFormat.readFeature(
-            {
+        const features = new GeoJSON().readFeatures(
+          {
+            type: "FeatureCollection",
+            features: parcelsArray.map((item) => ({
               type: "Feature",
               geometry: item.geom,
+              id:
+                item.cadastre_parcel_id ||
+                `${item.cadastremapno}-${item.parcelno}` ||
+                `parcel-${item.gid}`,
               properties: {
                 ...item,
                 geom: undefined,
                 district_lao: item.district_lao || districtToLoad.displayName,
                 color: districtToLoad.color,
               },
-            },
-            { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
-          );
+            })),
+          },
+          { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
+        );
 
-          // --- FIX: Set a unique ID for each feature ---
-          const featureId =
-            item.cadastre_parcel_id ||
-            `${item.cadastremapno}-${item.parcelno}` ||
-            `parcel-${item.gid}`;
-          olFeature.setId(featureId);
-
-          features.push(olFeature);
-        });
-
-        let vectorSource =
-          layersRef.current[districtToLoad.name]?.getSource() ||
-          new VectorSource();
-        vectorSource.clear();
-        vectorSource.addFeatures(features);
-
-        if (!layersRef.current[districtToLoad.name]) {
-          const newLayer = new VectorLayer({
-            source: vectorSource,
-            style: getParcelStyle,
-            properties: {
-              name: `parcel_layer_${districtToLoad.name}`,
-              district: districtToLoad.name,
-            },
-            zIndex: 10,
-          });
-          map.addLayer(newLayer);
-          layersRef.current[districtToLoad.name] = newLayer;
+        // Remove old layer for this district if it exists, before adding a new one
+        if (layersRef.current[districtToLoad.name]) {
+          map.removeLayer(layersRef.current[districtToLoad.name]);
         }
+
+        const newLayer = new VectorLayer({
+          source: new VectorSource({ features }),
+          style: getParcelStyle,
+          properties: {
+            name: `parcel_layer_${districtToLoad.name}`,
+            district: districtToLoad.name,
+          },
+          zIndex: 10,
+        });
+        map.addLayer(newLayer);
+        layersRef.current[districtToLoad.name] = newLayer;
 
         setDistricts((prev) =>
           prev.map((d) =>
             d.name === districtToLoad.name
-              ? {
-                  ...d,
-                  parcels: features,
-                  loading: false,
-                  hasLoaded: true,
-                  error: null,
-                }
+              ? { ...d, loading: false, hasLoaded: true, error: null }
               : d
           )
         );
       } catch (error) {
-        console.error(
-          `[ParcelLayerControl] Error for ${districtToLoad.displayName}:`,
-          error
-        );
+        console.error(`Error for ${districtToLoad.displayName}:`, error);
         setDistricts((prev) =>
           prev.map((d) =>
             d.name === districtToLoad.name
@@ -163,7 +137,7 @@ const ParcelLayerControl = ({
     districts.forEach((district) => {
       const layer = layersRef.current[district.name];
       if (layer) {
-        layer.setVisible(district.checked && district.hasLoaded);
+        layer.setVisible(district.checked);
       }
     });
   }, [districts]);
@@ -171,6 +145,14 @@ const ParcelLayerControl = ({
   useEffect(() => {
     if (!map) return;
     const clickHandler = map.on("singleclick", (evt) => {
+      // Deselect all features first
+      Object.values(layersRef.current).forEach((layer) => {
+        layer
+          ?.getSource()
+          .getFeatures()
+          .forEach((f) => f.get("isSelected") && f.set("isSelected", false));
+      });
+
       let selectedFeature = null;
       map.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
         if (layer && layer.get("name")?.startsWith("parcel_layer_")) {
@@ -178,12 +160,7 @@ const ParcelLayerControl = ({
           return true;
         }
       });
-      Object.values(layersRef.current).forEach((layer) => {
-        layer
-          ?.getSource()
-          .getFeatures()
-          .forEach((f) => f.get("isSelected") && f.set("isSelected", false));
-      });
+
       if (selectedFeature) {
         selectedFeature.set("isSelected", true);
         onParcelSelect(selectedFeature.getProperties());
@@ -192,15 +169,13 @@ const ParcelLayerControl = ({
       }
     });
     clickKeyRef.current = clickHandler;
+
     return () => {
       if (clickKeyRef.current) unByKey(clickKeyRef.current);
-      Object.values(layersRef.current).forEach((layer) =>
-        map.removeLayer(layer)
-      );
-      layersRef.current = {};
     };
   }, [map, onParcelSelect]);
 
   return null;
 };
+
 export default ParcelLayerControl;

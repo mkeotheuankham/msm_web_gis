@@ -1,373 +1,153 @@
-// src/MapComponent.jsx
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import "ol/ol.css";
 import Map from "ol/Map";
 import View from "ol/View";
-import TileLayer from "ol/layer/Tile";
-import OSM from "ol/source/OSM";
-import XYZ from "ol/source/XYZ";
 import { fromLonLat } from "ol/proj";
-import VectorLayer from "ol/layer/Vector";
+import { defaults as defaultControls } from "ol/control";
 import VectorSource from "ol/source/Vector";
+import VectorLayer from "ol/layer/Vector";
 import Draw, { createBox } from "ol/interaction/Draw";
 import Snap from "ol/interaction/Snap";
 import Modify from "ol/interaction/Modify";
 import Select from "ol/interaction/Select";
-import Style from "ol/style/Style";
-import Fill from "ol/style/Fill";
-import Stroke from "ol/style/Stroke";
-import CircleStyle from "ol/style/Circle";
-import { defaults as defaultControls } from "ol/control";
-import { defaults as defaultInteractions } from "ol/interaction";
-import GeoJSON from "ol/format/GeoJSON";
 
-import DrawingToolbar from "./components/ui/DrawingToolbar";
+// Import UI Components
 import BaseMapSwitcher from "./components/map/BaseMapSwitcher";
 import CoordinateBar from "./components/ui/CoordinateBar";
-import ParcelLayerControl from "./components/map/ParcelLayerControl";
-import ParcelInfoPanel from "./components/ui/ParcelInfoPanel";
-import RoadLayer from "./components/map/RoadLayer";
-import BuildingLayer from "./components/map/BuildingLayer";
 
 function MapComponent({
-  onMapLoaded,
-  children,
-  districts,
-  setDistricts,
-  layerStates,
-  updateLayerState,
-  onParcelSelect,
-  selectedParcel,
-  loadTrigger,
   selectedBaseMap,
   setSelectedBaseMap,
+  interactionMode,
+  isSnapActive,
+  onMapLoaded,
+  children,
 }) {
   const mapRef = useRef(null);
-  const mapInstanceRef = useRef(null);
-
+  const [map, setMap] = useState(null);
   const drawingSourceRef = useRef(new VectorSource());
-  const measureSourceRef = useRef(new VectorSource());
-  const drawInteractionRef = useRef(null);
-  const modifyInteractionRef = useRef(null);
-  const selectInteractionRef = useRef(null);
+
+  // Refs to hold interactions
+  const interactionRef = useRef(null);
   const snapInteractionRef = useRef(null);
 
-  const [interactionMode, setInteractionMode] = useState("None");
-  const [isSnapActive, setIsSnapActive] = useState(false);
-  const [history, setHistory] = useState([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-
-  const historyIndexRef = useRef(historyIndex);
-  historyIndexRef.current = historyIndex;
-
-  const pushToHistory = useCallback(() => {
-    const writer = new GeoJSON();
-    const features = drawingSourceRef.current.getFeatures();
-    const geoJsonStr = writer.writeFeatures(features);
-    setHistory((prev) => {
-      const newHistory = prev.slice(0, historyIndexRef.current + 1);
-      newHistory.push(geoJsonStr);
-      setHistoryIndex(newHistory.length - 1);
-      return newHistory;
-    });
-  }, []);
-
+  // Effect to create the map instance ONE TIME
   useEffect(() => {
-    const currentMapContainer = mapRef.current;
-    if (!currentMapContainer || mapInstanceRef.current) return;
-
-    const osmLayer = new TileLayer({
-      source: new XYZ({
-        // Use XYZ source to specify a different URL
-        url: "https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-      }),
-      properties: { name: "OSM" },
-      visible: selectedBaseMap === "OSM",
-    });
-    const googleSatLayer = new TileLayer({
-      source: new XYZ({
-        url: "http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
-        maxZoom: 20,
-      }),
-      properties: { name: "Google Satellite" },
-      visible: selectedBaseMap === "Google Satellite", // Changed line
-    });
-    const googleHybridLayer = new TileLayer({
-      source: new XYZ({
-        url: "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
-        maxZoom: 20,
-      }),
-      properties: { name: "Google Hybrid" },
-      visible: selectedBaseMap === "Google Hybrid", // Changed line
-    });
-
     const drawingLayer = new VectorLayer({
       source: drawingSourceRef.current,
-      style: new Style({
-        fill: new Fill({ color: "rgba(255, 255, 255, 0.2)" }),
-        stroke: new Stroke({ color: "#ffcc33", width: 3 }),
-        image: new CircleStyle({
-          radius: 7,
-          fill: new Fill({ color: "#ffcc33" }),
-        }),
+      zIndex: 10,
+    });
+
+    const mapObject = new Map({
+      target: mapRef.current,
+      layers: [drawingLayer], // Add drawing layer on init
+      view: new View({
+        center: fromLonLat([103.85, 18.2]),
+        zoom: 7,
       }),
-      properties: { name: "drawing_layer" },
-      zIndex: 100,
+      controls: defaultControls(),
     });
 
-    const measureLayer = new VectorLayer({
-      source: measureSourceRef.current,
-      style: new Style({
-        fill: new Fill({ color: "rgba(255, 255, 255, 0.2)" }),
-        stroke: new Stroke({ color: "#ffcc33", width: 2 }),
-        image: new CircleStyle({
-          radius: 5,
-          stroke: new Stroke({ color: "#ffcc33" }),
-        }),
-      }),
-      zIndex: 100,
-    });
+    setMap(mapObject);
 
-    const initialView = new View({
-      center: fromLonLat([103.85, 18.2]),
-      zoom: 7,
-      minZoom: 2,
-      maxZoom: 22,
-    });
-
-    const map = new Map({
-      target: currentMapContainer,
-      layers: [
-        osmLayer,
-        googleSatLayer,
-        googleHybridLayer,
-        drawingLayer,
-        measureLayer,
-      ],
-      view: initialView,
-      controls: defaultControls({ attribution: false, zoom: false }),
-      interactions: defaultInteractions(),
-    });
-
-    mapInstanceRef.current = map;
-    onMapLoaded.setViewInstance(initialView);
-    onMapLoaded.setOpenLayersLoaded(true);
-    pushToHistory();
-
-    // Ensure map updates its size after rendering and base layer is set
-    const updateMapAndRedraw = () => {
-      if (mapRef.current) {
-        map.updateSize();
-        // This forces a redraw, which might trigger tile loading
-        map.renderSync();
-        console.log(
-          "[MapComponent] Map size updated and re-rendered after initial setup."
-        );
-      }
-    };
-    // Use requestAnimationFrame for more reliable post-render updates
-    let animationFrameId = requestAnimationFrame(updateMapAndRedraw);
-
-    const resizeObserver = new ResizeObserver(() => {
-      console.log("[MapComponent] Container resized, updating map size.");
-      map.updateSize();
-    });
-    resizeObserver.observe(currentMapContainer);
+    if (onMapLoaded) {
+      onMapLoaded.setOpenLayersLoaded?.(true);
+      onMapLoaded.setViewInstance?.(mapObject.getView());
+    }
 
     return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
+      if (mapObject) {
+        mapObject.setTarget(undefined);
       }
-      map.setTarget(undefined);
-      resizeObserver.disconnect();
     };
-  }, [onMapLoaded, pushToHistory, selectedBaseMap]); // Added selectedBaseMap to dependencies
+  }, [onMapLoaded]);
 
-  const handleUndo = useCallback(() => {
-    if (historyIndex > 0) {
-      const newIndex = historyIndex - 1;
-      const features = new GeoJSON().readFeatures(history[newIndex]);
-      drawingSourceRef.current.clear();
-      drawingSourceRef.current.addFeatures(features);
-      setHistoryIndex(newIndex);
-    }
-  }, [history, historyIndex]);
-
-  const handleRedo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      const newIndex = historyIndex + 1;
-      const features = new GeoJSON().readFeatures(history[newIndex]);
-      drawingSourceRef.current.clear();
-      drawingSourceRef.current.addFeatures(features);
-      setHistoryIndex(newIndex);
-    }
-  }, [history, historyIndex]);
-
-  const handleSave = () => {
-    const writer = new GeoJSON();
-    const features = drawingSourceRef.current.getFeatures();
-    if (features.length === 0) {
-      alert("ບໍ່ມີຂໍ້ມູນໃຫ້ບັນທຶກ!");
-      return;
-    }
-    const geoJsonData = writer.writeFeaturesObject(features, {
-      dataProjection: "EPSG:4326",
-      featureProjection: "EPSG:3857",
-    });
-    console.log("Saving Data (GeoJSON):", JSON.stringify(geoJsonData, null, 2));
-    alert(
-      `ຂໍ້ມູນ GeoJSON ຈຳນວນ ${features.length} features ຖືກບັນທຶກລົງໃນ Console ແລ້ວ.`
-    );
-  };
-
-  const clearDrawingAndMeasure = useCallback(() => {
-    drawingSourceRef.current.clear();
-    measureSourceRef.current.clear();
-    pushToHistory();
-  }, [pushToHistory]);
-
-  const toggleSnap = useCallback(() => setIsSnapActive((prev) => !prev), []);
-
+  // Effect to handle base map switching
   useEffect(() => {
-    const map = mapInstanceRef.current;
     if (!map) return;
+    // BaseMapSwitcher component now handles this logic
+  }, [map, selectedBaseMap]);
 
-    if (drawInteractionRef.current)
-      map.removeInteraction(drawInteractionRef.current);
-    if (selectInteractionRef.current)
-      map.removeInteraction(selectInteractionRef.current);
-    if (modifyInteractionRef.current)
-      map.removeInteraction(modifyInteractionRef.current);
-    drawInteractionRef.current = null;
-    selectInteractionRef.current = null;
-    modifyInteractionRef.current = null;
+  // Effect to handle drawing & editing interactions
+  useEffect(() => {
+    if (!map || typeof interactionMode !== "string") return;
 
-    if (
-      interactionMode.startsWith("Draw") ||
-      interactionMode.startsWith("Measure")
-    ) {
-      const isMeasure = interactionMode.startsWith("Measure");
-      const source = isMeasure
-        ? measureSourceRef.current
-        : drawingSourceRef.current;
-      let type;
-      if (interactionMode.endsWith("Area")) type = "Polygon";
-      else if (interactionMode.endsWith("Length")) type = "LineString";
-      else type = interactionMode.replace("Draw", "");
+    // Clean up previous interactions
+    if (interactionRef.current) {
+      map.removeInteraction(interactionRef.current);
+      interactionRef.current = null;
+    }
+    // A bit of a hack to remove the Select interaction for Modify
+    map.getInteractions().forEach((interaction) => {
+      if (interaction instanceof Select) {
+        map.removeInteraction(interaction);
+      }
+    });
 
-      const newDraw = new Draw({
-        source,
+    if (interactionMode === "None") return;
+
+    let newInteraction;
+
+    if (interactionMode.startsWith("Draw")) {
+      const type = interactionMode.replace("Draw", "");
+      newInteraction = new Draw({
+        source: drawingSourceRef.current,
         type: type === "Box" ? "Circle" : type,
         geometryFunction: type === "Box" ? createBox() : undefined,
       });
-      map.addInteraction(newDraw);
-      drawInteractionRef.current = newDraw;
-      if (!isMeasure) {
-        newDraw.on("drawend", () => setTimeout(pushToHistory, 0));
-      }
     } else if (interactionMode === "Edit") {
-      const select = new Select({
+      // For editing, we need both Select and Modify
+      const selectInteraction = new Select({
         layers: (l) => l.getSource() === drawingSourceRef.current,
       });
-      const modify = new Modify({ features: select.getFeatures() });
-      modify.on("modifyend", () => setTimeout(pushToHistory, 0));
-      map.addInteraction(select);
-      map.addInteraction(modify);
-      selectInteractionRef.current = select;
-      modifyInteractionRef.current = modify;
-    }
-  }, [interactionMode, pushToHistory]);
+      map.addInteraction(selectInteraction);
 
-  // FINAL CORRECTED LOGIC FOR SNAP INTERACTION
+      newInteraction = new Modify({
+        features: selectInteraction.getFeatures(),
+      });
+    }
+
+    if (newInteraction) {
+      map.addInteraction(newInteraction);
+      interactionRef.current = newInteraction;
+    }
+  }, [map, interactionMode]);
+
+  // Effect to handle snapping
   useEffect(() => {
-    const map = mapInstanceRef.current;
     if (!map) return;
 
-    // 1. Always remove the old snap interaction first
     if (snapInteractionRef.current) {
       map.removeInteraction(snapInteractionRef.current);
-    }
-
-    // 2. If snap is toggled off, do nothing further
-    if (!isSnapActive) {
       snapInteractionRef.current = null;
-      return;
     }
 
-    // 3. If snap is on, collect all sources and create a NEW interaction
-    const layers = map.getLayers().getArray();
-    const parcelLayers = layers.filter((l) =>
-      l.get("name")?.startsWith("parcel_layer_")
-    );
-
-    const sourcesToSnap = [
-      drawingSourceRef.current,
-      ...parcelLayers.map((l) => l.getSource()),
-    ];
-
-    const newSnap = new Snap({
-      sources: sourcesToSnap,
-      pixelTolerance: 20,
-    });
-
-    map.addInteraction(newSnap);
-    snapInteractionRef.current = newSnap; // Store the new instance
-  }, [districts, isSnapActive]); // Rerun when snap is toggled or when layers might have changed
+    if (isSnapActive) {
+      const newSnap = new Snap({ source: drawingSourceRef.current });
+      map.addInteraction(newSnap);
+      snapInteractionRef.current = newSnap;
+    }
+  }, [map, isSnapActive]);
 
   return (
     <div className="map-wrapper">
       <div ref={mapRef} className="map-container" />
 
-      {children}
-
-      {mapInstanceRef.current && (
+      {map && (
         <>
           <BaseMapSwitcher
-            map={mapInstanceRef.current}
+            map={map}
             selectedBaseMap={selectedBaseMap}
             onSelectBaseMap={setSelectedBaseMap}
           />
-          <DrawingToolbar
-            onSetInteractionMode={setInteractionMode}
-            currentInteractionMode={interactionMode}
-            onClearDrawing={clearDrawingAndMeasure}
-            isSnapActive={isSnapActive}
-            onToggleSnap={toggleSnap}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onSave={handleSave}
-            canUndo={historyIndex > 0}
-            canRedo={historyIndex < history.length - 1}
-          />
-          <ParcelLayerControl
-            map={mapInstanceRef.current}
-            districts={districts}
-            setDistricts={setDistricts}
-            onParcelSelect={onParcelSelect}
-            loadTrigger={loadTrigger}
-          />
-          <RoadLayer
-            map={mapInstanceRef.current}
-            isVisible={layerStates.road.isVisible}
-            onLoadingChange={(isLoading) =>
-              updateLayerState("road", { isLoading })
-            }
-            onErrorChange={(error) => updateLayerState("road", { error })}
-          />
-          <BuildingLayer
-            map={mapInstanceRef.current}
-            isVisible={layerStates.building.isVisible}
-            onLoadingChange={(isLoading) =>
-              updateLayerState("building", { isLoading })
-            }
-            onErrorChange={(error) => updateLayerState("building", { error })}
-          />
-          {selectedParcel && (
-            <ParcelInfoPanel
-              parcel={selectedParcel}
-              onClose={() => onParcelSelect(null)}
-            />
+          <CoordinateBar map={map} />
+
+          {/* Pass the map object to all children (like ParcelLayerControl) */}
+          {React.Children.map(children, (child) =>
+            React.isValidElement(child)
+              ? React.cloneElement(child, { map })
+              : child
           )}
-          <CoordinateBar map={mapInstanceRef.current} />
         </>
       )}
     </div>

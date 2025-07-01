@@ -139,7 +139,7 @@ const CoordinateBar = ({ map }) => {
           className="coordinate-fab"
           title="ເປີດແຖບພິກັດ"
         >
-          <Compass size={28} />
+          <Compass size={20} />
         </button>
       ) : (
         <div ref={panelRef} className="coordinate-bar">

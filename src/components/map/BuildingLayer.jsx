@@ -8,7 +8,13 @@ const MAX_RETRIES = 3;
 const BASE_RETRY_DELAY = 1000;
 const FETCH_TIMEOUT = 15000;
 
-const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
+const BuildingLayer = ({
+  map,
+  isVisible,
+  opacity,
+  onLoadingChange,
+  onErrorChange,
+}) => {
   const layerRef = useRef(null);
   const sourceRef = useRef(new VectorSource());
   const retryTimeoutIdRef = useRef(null);
@@ -122,6 +128,19 @@ const BuildingLayer = ({ map, isVisible, onLoadingChange, onErrorChange }) => {
       fetchData();
     }
   }, [map, isVisible, fetchData, buildingStyle]);
+
+  useEffect(() => {
+    if (layerRef.current) {
+      layerRef.current.setVisible(isVisible);
+    }
+  }, [isVisible]);
+
+  // 3. useEffect ສໍາລັບການປັບ Opacity
+  useEffect(() => {
+    if (layerRef.current) {
+      layerRef.current.setOpacity(opacity);
+    }
+  }, [opacity]);
 
   return null;
 };

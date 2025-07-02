@@ -1,13 +1,8 @@
 import React from "react";
-import { fromLonLat } from "ol/proj";
 import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
 
-// --- CHANGE ---
-// Removed `setCenter` and `setZoom` from props. They are not needed as
-// `onProvinceSelectForMap` handles the map movement directly.
 const ProvinceControls = ({
   openLayersLoaded,
-  isSidebarCollapsed,
   isExpanded,
   onToggleExpansion,
   onProvinceSelectForMap,
@@ -103,54 +98,39 @@ const ProvinceControls = ({
     },
   ];
 
-  // --- CHANGE ---
-  // Simplified the handler. It only needs to call the onProvinceSelectForMap prop.
-  const handleSetView = (coords, zoom, provinceName) => {
-    if (openLayersLoaded) {
-      // The `fromLonLat` function converts the standard coordinates
-      // into the projection used by the map (EPSG:3857).
-      onProvinceSelectForMap(fromLonLat(coords), zoom, provinceName);
-    } else {
-      console.warn("OpenLayers map is not loaded yet. Cannot set view.");
-    }
-  };
-
-  if (isSidebarCollapsed) {
-    return null;
-  }
-
   return (
-    <div
-      className={`province-controls ${isExpanded ? "expanded" : "collapsed"}`}
-    >
-      <div className="province-controls-header" onClick={onToggleExpansion}>
+    <div className="sidebar-section">
+      <div className="sidebar-section-header" onClick={onToggleExpansion}>
         <h3>ແຂວງ</h3>
         <button
           className="toggle-button"
-          aria-label={isExpanded ? "Collapse provinces" : "Expand provinces"}
+          aria-label={isExpanded ? "Collapse" : "Expand"}
         >
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
       </div>
-      <div className="province-content-wrapper">
-        {isExpanded && (
-          <div className="province-grid">
-            {provinces.map((province) => (
-              <button
-                key={province.name}
-                onClick={() =>
-                  handleSetView(province.coords, province.zoom, province.name)
-                }
-                disabled={!openLayersLoaded}
-                className="province-button"
-              >
-                <MapPin size={18} />
-                <span>{province.displayName}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+
+      {isExpanded && (
+        <div className="property-grid province-grid">
+          {provinces.map((province) => (
+            <button
+              key={province.name}
+              onClick={() =>
+                onProvinceSelectForMap(
+                  province.coords,
+                  province.zoom,
+                  province.name
+                )
+              }
+              disabled={!openLayersLoaded}
+              className="province-button"
+            >
+              <MapPin size={16} style={{ marginRight: "8px" }} />
+              {province.displayName}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -11,15 +11,11 @@ const DistrictSelector = ({
   districts,
   onToggle,
   onLoadData,
-  isSidebarCollapsed,
+  onOpacityChange,
   isExpanded,
   onToggleExpansion,
   selectedProvinceForDistricts,
 }) => {
-  if (isSidebarCollapsed) {
-    return null;
-  }
-
   const filteredDistricts = selectedProvinceForDistricts
     ? districts.filter((d) => d.province === selectedProvinceForDistricts)
     : [];
@@ -32,7 +28,7 @@ const DistrictSelector = ({
         <h3>ເມືອງ</h3>
         <button
           className="toggle-button"
-          aria-label={isExpanded ? "Collapse districts" : "Expand districts"}
+          aria-label={isExpanded ? "Collapse" : "Expand"}
         >
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
@@ -40,44 +36,63 @@ const DistrictSelector = ({
 
       {isExpanded && (
         <>
-          <div className="district-grid">
+          <div className="property-grid district-grid">
             {filteredDistricts.length > 0 ? (
               filteredDistricts.map((district) => (
-                <div key={district.name} className="district-item">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={district.checked}
-                      onChange={() => onToggle(district.name)}
-                      style={{ accentColor: district.color }}
-                    />
-                    {/* --- NEW WRAPPER for color and name --- */}
-                    <div className="district-item-content">
-                      <span
-                        className="district-color"
-                        style={{ backgroundColor: district.color }}
-                      ></span>
-                      <span className="district-name">
-                        {district.displayName}
+                <div key={district.name} className="district-item-container">
+                  <div className="district-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={district.checked}
+                        onChange={() => onToggle(district.name)}
+                      />
+                      <div className="district-item-content">
+                        <span
+                          className="district-color"
+                          style={{ backgroundColor: district.color }}
+                        ></span>
+                        <span className="district-name">
+                          {district.displayName}
+                        </span>
+                      </div>
+                      <div className="status-icons">
+                        {district.loading && (
+                          <Loader2
+                            size={16}
+                            className="animate-spin"
+                            title="ກຳລັງໂຫຼດ..."
+                          />
+                        )}
+                        {district.error && (
+                          <AlertCircle
+                            size={16}
+                            color="red"
+                            title={`ຂໍ້ຜິດພາດ: ${district.error}`}
+                          />
+                        )}
+                      </div>
+                    </label>
+                  </div>
+
+                  {district.hasLoaded && (
+                    <div className="opacity-slider-container">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={district.opacity}
+                        onChange={(e) =>
+                          onOpacityChange(district.name, e.target.value)
+                        }
+                        className="opacity-slider"
+                      />
+                      <span className="opacity-value">
+                        {Math.round(district.opacity * 100)}%
                       </span>
                     </div>
-                    <div className="status-icons">
-                      {district.loading && (
-                        <Loader2
-                          size={16}
-                          className="animate-spin text-blue-400"
-                          title="ກຳລັງໂຫຼດ..."
-                        />
-                      )}
-                      {district.error && (
-                        <AlertCircle
-                          size={16}
-                          className="text-red-500"
-                          title={`ຂໍ້ຜິດພາດ: ${district.error}`}
-                        />
-                      )}
-                    </div>
-                  </label>
+                  )}
                 </div>
               ))
             ) : (
@@ -92,11 +107,13 @@ const DistrictSelector = ({
           {filteredDistricts.length > 0 && (
             <button
               onClick={onLoadData}
-              disabled={!isAnyDistrictChecked}
+              disabled={
+                !isAnyDistrictChecked || districts.some((d) => d.loading)
+              }
               className="load-data-button"
             >
               <Download size={16} style={{ marginRight: "8px" }} />
-              ໂຫຼດຂໍ້ມູນແຜນທີ່
+              ໂຫຼດຂໍ້ມູນຕອນດິນ
             </button>
           )}
         </>

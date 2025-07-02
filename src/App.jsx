@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useCallback } from "react";
 import "ol/ol.css";
+import "./index.css";
 import { Globe } from "lucide-react";
+import { fromLonLat } from "ol/proj";
 
+// Import Components
 import MapComponent from "./MapComponent";
 import ProvinceControls from "./components/ui/ProvinceControls";
 import DistrictSelector from "./components/ui/DistrictSelector";
@@ -10,32 +13,48 @@ import ParcelLayerControl from "./components/map/ParcelLayerControl";
 import ParcelInfoPanel from "./components/ui/ParcelInfoPanel";
 import DrawingToolbar from "./components/ui/DrawingToolbar";
 import BaseMapSwitcher from "./components/map/BaseMapSwitcher";
+import LayerToggles from "./components/ui/LayerToggles";
+import RoadLayer from "./components/map/RoadLayer";
+import BuildingLayer from "./components/map/BuildingLayer";
+
+// Import Data
 import initialLaoDistricts from "./data/LaoDistrictsData";
 
 function App() {
-  const [openLayersLoaded, setOpenLayersLoaded] = useState(false);
+  // Map State
   const [viewInstance, setViewInstance] = useState(null);
+  const [openLayersLoaded, setOpenLayersLoaded] = useState(false);
   const [selectedBaseMap, setSelectedBaseMap] = useState("OSM");
 
+  // Data & Layer State
   const [districts, setDistricts] = useState(initialLaoDistricts);
   const [selectedProvinceForDistricts, setSelectedProvinceForDistricts] =
     useState("VientianeCapital");
   const [loadTrigger, setLoadTrigger] = useState(0);
   const [selectedParcel, setSelectedParcel] = useState(null);
+  const [layerStates, setLayerStates] = useState({
+    road: { isVisible: true, opacity: 1, isLoading: false, error: null },
+    building: { isVisible: true, opacity: 1, isLoading: false, error: null },
+  });
 
+  // Interaction State
   const [interactionMode, setInteractionMode] = useState("None");
   const [isSnapActive, setIsSnapActive] = useState(false);
 
+  // UI State
+  const [isProvincesExpanded, setProvincesExpanded] = useState(true);
+  const [isDistrictsExpanded, setDistrictsExpanded] = useState(true);
+  const [isLayersExpanded, setLayersExpanded] = useState(true);
+
+  // Memoized callback object for MapComponent
   const onMapLoaded = useMemo(
-    () => ({
-      setOpenLayersLoaded,
-      setViewInstance,
-    }),
+    () => ({ setViewInstance, setOpenLayersLoaded }),
     []
   );
 
+  // Derived State for Loading Bar
   const overallLoading = useMemo(
-    () => districts.some((d) => d.loading),
+    () => districts.some((d) => d.checked && d.loading),
     [districts]
   );
   const loadedFeaturesCount = useMemo(
@@ -51,10 +70,15 @@ function App() {
     return (loadedCount / checkedDistricts.length) * 100;
   }, [districts]);
 
+  // Handlers
   const handleProvinceSelectionForMap = useCallback(
     (coords, zoom, provinceName) => {
       if (viewInstance) {
-        viewInstance.animate({ center: coords, zoom, duration: 1000 });
+        viewInstance.animate({
+          center: fromLonLat(coords),
+          zoom,
+          duration: 1000,
+        });
       }
       setSelectedProvinceForDistricts(provinceName);
     },
@@ -69,13 +93,32 @@ function App() {
     );
   }, []);
 
-  const handleLoadData = useCallback(() => setLoadTrigger((c) => c + 1), []);
+  const handleDistrictOpacityChange = useCallback((districtName, opacity) => {
+    setDistricts((prev) =>
+      prev.map((d) =>
+        d.name === districtName ? { ...d, opacity: parseFloat(opacity) } : d
+      )
+    );
+  }, []);
 
-  const handleSetInteractionMode = (mode) => {
+  const handleLoadData = useCallback(() => setLoadTrigger((c) => c + 1), []);
+  const handleSetInteractionMode = (mode) =>
     setInteractionMode((current) => (current === mode ? "None" : mode));
+  const handleToggleSnap = () => setIsSnapActive((prev) => !prev);
+
+  const handleLayerVisibilityChange = (layerName, isVisible) => {
+    setLayerStates((prev) => ({
+      ...prev,
+      [layerName]: { ...prev[layerName], isVisible },
+    }));
   };
 
-  const handleToggleSnap = () => setIsSnapActive((prev) => !prev);
+  const handleLayerOpacityChange = (layerName, opacity) => {
+    setLayerStates((prev) => ({
+      ...prev,
+      [layerName]: { ...prev[layerName], opacity },
+    }));
+  };
 
   return (
     <div className="app-container">
@@ -99,13 +142,21 @@ function App() {
         </div>
       </header>
 
-      <main className="app-main">
+      <div className="app-main">
         <MapComponent
           onMapLoaded={onMapLoaded}
           selectedBaseMap={selectedBaseMap}
           interactionMode={interactionMode}
           isSnapActive={isSnapActive}
         >
+          <RoadLayer
+            isVisible={layerStates.road.isVisible}
+            opacity={layerStates.road.opacity}
+          />
+          <BuildingLayer
+            isVisible={layerStates.building.isVisible}
+            opacity={layerStates.building.opacity}
+          />
           <ParcelLayerControl
             districts={districts}
             setDistricts={setDistricts}
@@ -122,17 +173,27 @@ function App() {
         </MapComponent>
 
         <div className="sidebar">
+          <LayerToggles
+            layerStates={layerStates}
+            onVisibilityChange={handleLayerVisibilityChange}
+            onOpacityChange={handleLayerOpacityChange}
+            isExpanded={isLayersExpanded}
+            onToggleExpansion={() => setLayersExpanded((e) => !e)}
+          />
           <ProvinceControls
             openLayersLoaded={openLayersLoaded}
             onProvinceSelectForMap={handleProvinceSelectionForMap}
-            isExpanded={true}
+            isExpanded={isProvincesExpanded}
+            onToggleExpansion={() => setProvincesExpanded((e) => !e)}
           />
           <DistrictSelector
             districts={districts}
             onToggle={toggleDistrict}
             onLoadData={handleLoadData}
+            onOpacityChange={handleDistrictOpacityChange}
             selectedProvinceForDistricts={selectedProvinceForDistricts}
-            isExpanded={true}
+            isExpanded={isDistrictsExpanded}
+            onToggleExpansion={() => setDistrictsExpanded((e) => !e)}
           />
         </div>
 
@@ -142,7 +203,7 @@ function App() {
             onClose={() => setSelectedParcel(null)}
           />
         )}
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-// src/data/LaoDistrictsData.js
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const laoDistricts = [
@@ -18,6 +16,7 @@ const laoDistricts = [
     error: null,
     color: "#3388ff",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "sikodtabong",
@@ -31,6 +30,7 @@ const laoDistricts = [
     error: null,
     color: "#ff5733",
     hasLoaded: false,
+    opacity: 1,
   },
   // ... phần còn lại của dữ liệu không thay đổi
   {
@@ -45,6 +45,7 @@ const laoDistricts = [
     error: null,
     color: "#33ff57",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "sisattanak",
@@ -58,6 +59,7 @@ const laoDistricts = [
     error: null,
     color: "#5733ff",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "naxaithong",
@@ -71,6 +73,7 @@ const laoDistricts = [
     error: null,
     color: "#ff33f5",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "xaithany",
@@ -84,6 +87,7 @@ const laoDistricts = [
     error: null,
     color: "#f5ff33",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "hadxaifong",
@@ -97,6 +101,7 @@ const laoDistricts = [
     error: null,
     color: "#ff8c33",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "xangthong",
@@ -110,6 +115,7 @@ const laoDistricts = [
     error: null,
     color: "#8c33ff",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "pakngum",
@@ -123,6 +129,7 @@ const laoDistricts = [
     error: null,
     color: "#33fff5",
     hasLoaded: false,
+    opacity: 1,
   },
   // ຫຼວງພະບາງ (LuangPrabang)
   {
@@ -137,6 +144,7 @@ const laoDistricts = [
     error: null,
     color: "#add8e6",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "nan",
@@ -150,6 +158,7 @@ const laoDistricts = [
     error: null,
     color: "#add8e6",
     hasLoaded: false,
+    opacity: 1,
   },
   // ສະຫວັນນະເຂດ (Savannakhet)
   {
@@ -164,6 +173,7 @@ const laoDistricts = [
     error: null,
     color: "#90ee90",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "xaybouly",
@@ -177,6 +187,7 @@ const laoDistricts = [
     error: null,
     color: "#90ee90",
     hasLoaded: false,
+    opacity: 1,
   },
   // ຈຳປາສັກ (Champasak)
   {
@@ -191,6 +202,7 @@ const laoDistricts = [
     error: null,
     color: "#ffa07a",
     hasLoaded: false,
+    opacity: 1,
   },
   {
     name: "champasak_dist",
@@ -204,6 +216,7 @@ const laoDistricts = [
     error: null,
     color: "#ffa07a",
     hasLoaded: false,
+    opacity: 1,
   },
 ];
 

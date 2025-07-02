@@ -1,5 +1,3 @@
-// src/components/map/ParcelLayerControl.jsx (Your original and correct version)
-
 import React, { useEffect, useRef, useCallback } from "react";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -7,44 +5,44 @@ import GeoJSON from "ol/format/GeoJSON";
 import { Fill, Stroke, Style, Text } from "ol/style";
 import { unByKey } from "ol/Observable";
 
-const getParcelStyle = (feature, resolution) => {
-  const color = feature.get("color") || "#3399CC";
-  const isSelected = feature.get("isSelected");
-  const styles = [
-    new Style({
-      stroke: new Stroke({
-        color: isSelected ? "yellow" : "rgba(0, 0, 0, 0.7)",
-        width: isSelected ? 3 : 1,
-      }),
-      fill: new Fill({
-        color: isSelected ? "rgba(255, 255, 0, 0.6)" : color + "D0",
-      }),
-    }),
-  ];
-  if (resolution < 5) {
-    styles.push(
-      new Style({
-        text: new Text({
-          text: feature.get("parcelno") ? feature.get("parcelno").trim() : "",
-          font: "12px Calibri,sans-serif",
-          fill: new Fill({ color: "#000" }),
-          stroke: new Stroke({ color: "#fff", width: 3 }),
-        }),
-      })
-    );
-  }
-  return styles;
-};
-
 const ParcelLayerControl = ({
   map,
-  districts,
+  districts, // Note: This will be the filtered list of *checked* districts from App.jsx
   setDistricts,
   onParcelSelect,
   loadTrigger,
 }) => {
   const layersRef = useRef({});
   const clickKeyRef = useRef(null);
+
+  const getParcelStyle = (feature, resolution) => {
+    const color = feature.get("color") || "#3399CC";
+    const isSelected = feature.get("isSelected");
+    const styles = [
+      new Style({
+        stroke: new Stroke({
+          color: isSelected ? "yellow" : "rgba(0, 0, 0, 0.7)",
+          width: isSelected ? 3 : 1,
+        }),
+        fill: new Fill({
+          color: isSelected ? "rgba(255, 255, 0, 0.6)" : color + "D0",
+        }),
+      }),
+    ];
+    if (resolution < 5) {
+      styles.push(
+        new Style({
+          text: new Text({
+            text: feature.get("parcelno")?.trim() || "",
+            font: "12px Calibri,sans-serif",
+            fill: new Fill({ color: "#000" }),
+            stroke: new Stroke({ color: "#fff", width: 3 }),
+          }),
+        })
+      );
+    }
+    return styles;
+  };
 
   const loadParcelData = useCallback(
     async (districtToLoad) => {
@@ -55,14 +53,15 @@ const ParcelLayerControl = ({
             : d
         )
       );
+
       try {
         const response = await fetch(districtToLoad.endpoint);
         if (!response.ok)
           throw new Error(`HTTP error! status: ${response.status}`);
         const rawData = await response.json();
         const parcelsArray = rawData[districtToLoad.dataKey];
-        if (!parcelsArray || !Array.isArray(parcelsArray))
-          throw new Error(`Invalid data format.`);
+        if (!Array.isArray(parcelsArray))
+          throw new Error("Invalid data format.");
 
         const features = new GeoJSON().readFeatures(
           {
@@ -85,7 +84,6 @@ const ParcelLayerControl = ({
           { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
         );
 
-        // Remove old layer for this district if it exists, before adding a new one
         if (layersRef.current[districtToLoad.name]) {
           map.removeLayer(layersRef.current[districtToLoad.name]);
         }
@@ -93,11 +91,9 @@ const ParcelLayerControl = ({
         const newLayer = new VectorLayer({
           source: new VectorSource({ features }),
           style: getParcelStyle,
-          properties: {
-            name: `parcel_layer_${districtToLoad.name}`,
-            district: districtToLoad.name,
-          },
+          properties: { name: `parcel_layer_${districtToLoad.name}` },
           zIndex: 10,
+          opacity: districtToLoad.opacity, // Set initial opacity
         });
         map.addLayer(newLayer);
         layersRef.current[districtToLoad.name] = newLayer;
@@ -105,16 +101,19 @@ const ParcelLayerControl = ({
         setDistricts((prev) =>
           prev.map((d) =>
             d.name === districtToLoad.name
-              ? { ...d, loading: false, hasLoaded: true, error: null }
+              ? { ...d, loading: false, hasLoaded: true }
               : d
           )
         );
       } catch (error) {
-        console.error(`Error for ${districtToLoad.displayName}:`, error);
+        console.error(
+          `Error loading data for ${districtToLoad.displayName}:`,
+          error
+        );
         setDistricts((prev) =>
           prev.map((d) =>
             d.name === districtToLoad.name
-              ? { ...d, error: `Failed: ${error.message}`, loading: false }
+              ? { ...d, loading: false, error: error.message }
               : d
           )
         );
@@ -138,6 +137,7 @@ const ParcelLayerControl = ({
       const layer = layersRef.current[district.name];
       if (layer) {
         layer.setVisible(district.checked);
+        layer.setOpacity(district.opacity); // Update opacity
       }
     });
   }, [districts]);
@@ -145,22 +145,19 @@ const ParcelLayerControl = ({
   useEffect(() => {
     if (!map) return;
     const clickHandler = map.on("singleclick", (evt) => {
-      // Deselect all features first
-      Object.values(layersRef.current).forEach((layer) => {
+      Object.values(layersRef.current).forEach((layer) =>
         layer
-          ?.getSource()
+          .getSource()
           .getFeatures()
-          .forEach((f) => f.get("isSelected") && f.set("isSelected", false));
-      });
-
+          .forEach((f) => f.get("isSelected") && f.set("isSelected", false))
+      );
       let selectedFeature = null;
       map.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
-        if (layer && layer.get("name")?.startsWith("parcel_layer_")) {
+        if (layer?.get("name")?.startsWith("parcel_layer_")) {
           selectedFeature = feature;
           return true;
         }
       });
-
       if (selectedFeature) {
         selectedFeature.set("isSelected", true);
         onParcelSelect(selectedFeature.getProperties());
@@ -169,10 +166,7 @@ const ParcelLayerControl = ({
       }
     });
     clickKeyRef.current = clickHandler;
-
-    return () => {
-      if (clickKeyRef.current) unByKey(clickKeyRef.current);
-    };
+    return () => unByKey(clickKeyRef.current);
   }, [map, onParcelSelect]);
 
   return null;

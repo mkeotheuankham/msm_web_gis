@@ -1,13 +1,14 @@
-import React from "react";
-import { MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import React from "react"; // import React
+import { MapPin, ChevronDown, ChevronUp } from "lucide-react"; // import icons ຈາກ lucide-react
 
 const ProvinceControls = ({
-  openLayersLoaded,
-  isExpanded,
-  onToggleExpansion,
-  onProvinceSelectForMap,
+  openLayersLoaded, // boolean ທີ່ບອກວ່າ OpenLayers ໂຫຼດສຳເລັດແລ້ວບໍ່
+  isExpanded, // state ທີ່ບອກວ່າສ່ວນ controls ຖືກຂະຫຍາຍ (ເປີດ) ຢູ່ບໍ່
+  onToggleExpansion, // callback function ເພື່ອສະຫຼັບການຂະຫຍາຍ/ຫຍໍ້
+  onProvinceSelectForMap, // callback function ເມື່ອມີການເລືອກແຂວງເພື່ອຊູມໄປທີ່ແຂວງນັ້ນ
 }) => {
   const provinces = [
+    // ລາຍຊື່ object ຂອງແຂວງຕ່າງໆ ພ້ອມຂໍ້ມູນ: name, displayName, coords (ພິກັດໃຈກາງ), zoom (ລະດັບ zoom ທີ່ເໝາະສົມ)
     {
       name: "VientianeCapital",
       displayName: "ນະຄອນຫຼວງວຽງຈັນ",
@@ -99,34 +100,40 @@ const ProvinceControls = ({
   ];
 
   return (
+    // ສ່ວນ UI ຂອງ Province Controls
     <div className="sidebar-section">
+      {/* Header ຂອງສ່ວນແຂວງ, ສາມາດຄລິກເພື່ອຂະຫຍາຍ/ຫຍໍ້ */}
       <div className="sidebar-section-header" onClick={onToggleExpansion}>
-        <h3>ແຂວງ</h3>
+        <h3>ແຂວງ</h3> {/* ຫົວຂໍ້: ແຂວງ */}
         <button
           className="toggle-button"
-          aria-label={isExpanded ? "Collapse" : "Expand"}
+          aria-label={isExpanded ? "Collapse" : "Expand"} // Accessibility label
         >
-          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}{" "}
+          {/* ສະແດງ icon ລູກສອນຂຶ້ນ ຫຼື ລູກສອນລົງ */}
         </button>
       </div>
 
+      {/* ສະແດງເນື້ອຫາເມື່ອ isExpanded ເປັນ true ເທົ່ານັ້ນ */}
       {isExpanded && (
         <div className="property-grid province-grid">
           {provinces.map((province) => (
+            // loop ຜ່ານລາຍຊື່ແຂວງເພື່ອສ້າງປຸ່ມສຳລັບແຕ່ລະແຂວງ
             <button
-              key={province.name}
+              key={province.name} // key ທີ່ເປັນເອກະລັກ
               onClick={() =>
                 onProvinceSelectForMap(
-                  province.coords,
-                  province.zoom,
-                  province.name
+                  province.coords, // ສົ່ງພິກັດໃຈກາງ
+                  province.zoom, // ສົ່ງລະດັບ zoom
+                  province.name // ສົ່ງຊື່ແຂວງ
                 )
               }
-              disabled={!openLayersLoaded}
+              disabled={!openLayersLoaded} // ປິດການໃຊ້ງານປຸ່ມຖ້າ OpenLayers ຍັງບໍ່ໂຫຼດ
               className="province-button"
             >
-              <MapPin size={16} style={{ marginRight: "8px" }} />
-              {province.displayName}
+              <MapPin size={16} style={{ marginRight: "8px" }} />{" "}
+              {/* icon MapPin */}
+              {province.displayName} {/* ສະແດງຊື່ແຂວງ */}
             </button>
           ))}
         </div>
@@ -135,4 +142,4 @@ const ProvinceControls = ({
   );
 };
 
-export default ProvinceControls;
+export default ProvinceControls; // export component

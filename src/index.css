@@ -32,7 +32,9 @@ opacity-slider - ແຖບເລື່ອນຄວບຄຸມຄວາມໂປ
 /* ==========================================================================
    1. Base and Global Styles - ຮູບແບບພື້ນຖານ ແລະ ທົ່ວໄປ
    ========================================================================== */
+/* ກໍານົດຕົວແປ CSS ສໍາລັບສີ, ຂະໜາດ, ແລະອື່ນໆ */
 :root {
+  /* <<<<<<< HEAD */
   /* ຕັ້ງຄ່າຕົວແປ CSS */
   --header-height: 50px; /* ຄວາມສູງຂອງ header */
   --color-primary-bg: #1e1e1e; /* ສີພື້ນຫຼັກ */
@@ -46,7 +48,7 @@ opacity-slider - ແຖບເລື່ອນຄວບຄຸມຄວາມໂປ
   --color-accent-blue-hover: #0095f7; /* ສີຕົວເລັ່ງເມື່ອ hover */
 }
 
-/* ຕັ້ງຄ່າພື້ນຖານສຳລັບທຸກເອລີເມັນ */
+/* ຕັ້ງຄ່າ box-sizing ສໍາລັບທຸກ Elemen */
 *,
 *::before,
 *::after {
@@ -66,11 +68,12 @@ body,
   background-color: var(--color-primary-bg); /* ສີພື້ນຫຼັກ */
   color: var(--color-text-light); /* ສີຕົວອັກສອນ */
 }
-
 /* ==========================================================================
    2. Main Application Layout (Floating UI Architecture) - ໂຄງສ້າງໜ້າຈໍຫຼັກ
    ========================================================================== */
+/* Container ຫຼັກຂອງແອັບພລິເຄຊັນ */
 .app-container {
+  /* <<<<<<< HEAD */
   position: relative;
   height: 100%;
   background-color: #2c2c2c; /* ສີພື້ນຫຼັງແຜນທີ່ */
@@ -84,12 +87,28 @@ body,
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1; /* ຊັ້ນພື້ນຖານ */
+  z-index: 1; /* Z-index 1 (Layer ພື້ນຖານ) */
+  position: relative; /* ຕໍາແໜ່ງ Relative */
+  height: 100%; /* ຄວາມສູງ 100% */
+  background-color: #2c2c2c; /* ສີພື້ນຫຼັງແຜນທີ່ */
 }
+
+/* Map ຈະເຕັມພື້ນທີ່ທັງໝົດຂອງ Container ເປັນ Layer ພື້ນຖານ */
+.map-wrapper,
+.map-container {
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: 0; /* ຕໍາແໜ່ງເທິງສຸດ */
+  left: 0; /* ຕໍາແໜ່ງຊ້າຍສຸດ */
+  width: 100%; /* ຄວາມກວ້າງ 100% */
+  height: 100%; /* ຄວາມສູງ 100% */
+  z-index: 1; /* Z-index 1 (Layer ພື້ນຖານ) */
+}
+/* ເຊື່ອງ Outline ເວລາ Focus ໃສ່ Map Container */
 .map-container:focus {
   outline: none; /* ລຶບເສັ້ນໂຄດອອກເມື່ອ focus */
 }
 
+/* <<<<<<< HEAD */
 /* ຮູບແບບສຳລັບ header ທີ່ລອຍຢູ່ເທິງແຜນທີ່ */
 .app-header {
   position: absolute;
@@ -150,16 +169,408 @@ body,
   white-space: nowrap; /* ປ້ອງກັນຂໍ້ຄວາມຂຶ້ນບົວແບບອັດຕະໂນມັດ */
   margin: 0;
 }
-.base-map-label {
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
+/* Header ຈະລອຍຢູ່ເທິງສຸດຂອງແຜນທີ່ */
+.app-header {
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: 0; /* ຕໍາແໜ່ງເທິງສຸດ */
+  left: 0; /* ຕໍາແໜ່ງຊ້າຍສຸດ */
+  width: 100%; /* ຄວາມກວ້າງ 100% */
+  height: var(--header-height); /* ຄວາມສູງຕາມຕົວແປ */
+  padding: 0 16px; /* Padding ຊ້າຍຂວາ */
+  z-index: 1001; /* Z-index ສູງເພື່ອໃຫ້ຢູ່ເທິງສຸດ */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  justify-content: space-between; /* ຈັດວາງແນວນອນຫ່າງກັນ */
+  background: rgba(37, 37, 38, 0.9); /* ສີພື້ນຫຼັງແບບໂປ່ງໃສ */
+  backdrop-filter: blur(10px); /* ເອັບເຟັກ Blur ພື້ນຫຼັງ */
+  border-bottom: 1px solid #333; /* ຂອບລຸ່ມ */
 }
+
+/* Sidebar ຈະລອຍຢູ່ເທິງສຸດຂອງແຜນທີ່ */
+.sidebar {
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: calc(var(--header-height) + 1rem); /* ຕໍາແໜ່ງເທິງ (ຫຼັງ Header) */
+  right: 1rem; /* ຕໍາແໜ່ງຂວາ */
+  bottom: 1rem; /* ຕໍາແໜ່ງລຸ່ມ */
+  width: 320px; /* ຄວາມກວ້າງ */
+  z-index: 1001; /* Z-index ສູງ */
+  background: var(--color-secondary-bg); /* ສີພື້ນຫຼັງຮອງ */
+  border-radius: 12px; /* ຂອບມົນ */
+  padding: 1rem; /* Padding ພາຍໃນ */
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 1rem; /* ໄລຍະຫ່າງລະຫວ່າງລາຍການ */
+  overflow-y: auto; /* ເປີດ Scrollbar ແນວຕັ້ງຖ້າເນື້ອຫາເກີນ */
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5); /* ເງົາ */
+}
+
+/* Title ຂອງ Header */
+.header-title {
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  font-size: 1.2rem; /* ຂະໜາດ Font */
+  font-weight: 600; /* ນໍ້າໜັກ Font */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+
+/* Section ພາຍໃນ Sidebar */
+.sidebar-section {
+  background-color: var(--color-inset-bg); /* ສີພື້ນຫຼັງ inset */
+  border-radius: 8px; /* ຂອບມົນ */
+  padding: 12px 16px; /* Padding */
+  border: 1px solid var(--color-border-light); /* ຂອບ */
+  box-shadow: 0 4px 15px var(--color-shadow-dark); /* ເງົາ */
+}
+
+/* Header ຂອງ Section ໃນ Sidebar */
+.sidebar-section-header {
+  display: flex; /* ໃຊ້ Flexbox */
+  justify-content: space-between; /* ຈັດວາງຫ່າງກັນ */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  padding: 4px 0; /* Padding */
+}
+
+/* Header ຍ່ອຍໃນ Sidebar Section */
+.sidebar-section-header h3 {
+  margin: 0; /* ລົບຂອບນອກ */
+  font-size: 1rem; /* ຂະໜາດ Font */
+  font-weight: 500; /* ນໍ້າໜັກ Font */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+}
+
+/* ປຸ່ມ Toggle ໃນ Sidebar Header */
+.toggle-button {
+  background: none; /* ບໍ່ມີພື້ນຫຼັງ */
+  border: none; /* ບໍ່ມີຂອບ */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  padding: 0; /* ລົບ Padding */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  justify-content: center; /* ຈັດວາງແນວນອນກາງ */
+  transition: transform 0.2s ease-in-out; /* ເອັບເຟັກການປ່ຽນແປງ */
+}
+.toggle-button:hover {
+  color: var(--color-accent-blue); /* ສີເມື່ອ Hover */
+}
+.toggle-button[aria-expanded="true"] {
+  transform: rotate(180deg); /* ໝຸນ 180 ອົງສາເມື່ອຂະຫຍາຍ */
+}
+
+/* Property Grid ສໍາລັບການຈັດວາງລາຍການ */
+.property-grid {
+  display: grid; /* ໃຊ້ Grid Layout */
+  grid-template-columns: repeat(2, 1fr); /* 2 Column ຂະໜາດເທົ່າກັນ */
+  gap: 10px; /* ໄລຍະຫ່າງລະຫວ່າງ Cell */
+  padding-top: 12px; /* Padding ເທິງ */
+  margin-top: 10px; /* Margin ເທິງ */
+  border-top: 1px solid var(--color-border-light); /* ຂອບເທິງ */
+}
+
+/* Grid ສະເພາະສໍາລັບແຂວງ */
+.province-grid {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(120px, 1fr)
+  ); /* ປັບຂະໜາດ Column ອັດຕະໂນມັດ */
+}
+
+/* Grid ສະເພາະສໍາລັບເມືອງ */
+.district-grid {
+  grid-template-columns: 1fr; /* 1 Column */
+  gap: 8px; /* ໄລຍະຫ່າງລະຫວ່າງ Cell */
+}
+
+/* Item ພາຍໃນ Province Grid */
+.province-item {
+  background-color: var(--color-primary-bg); /* ສີພື້ນຫຼັງ */
+  border: 1px solid var(--color-border-light); /* ຂອບ */
+  border-radius: 6px; /* ຂອບມົນ */
+  padding: 8px 12px; /* Padding */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  justify-content: center; /* ຈັດວາງແນວນອນກາງ */
+  gap: 8px; /* ໄລຍະຫ່າງລະຫວ່າງລາຍການ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  font-size: 0.85rem; /* ຂະໜາດ Font */
+  font-weight: 500; /* ນໍ້າໜັກ Font */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+  transition: all 0.2s ease; /* ເອັບເຟັກການປ່ຽນແປງ */
+}
+.province-item:hover {
+  background-color: #2a2a2a; /* ສີພື້ນຫຼັງເມື່ອ Hover */
+  border-color: var(--color-accent-blue); /* ສີຂອບເມື່ອ Hover */
+}
+.province-item.selected {
+  background-color: var(--color-accent-blue); /* ສີພື້ນຫຼັງເມື່ອຖືກເລືອກ */
+  border-color: var(--color-accent-blue); /* ສີຂອບເມື່ອຖືກເລືອກ */
+  color: white; /* ສີຕົວໜັງສື */
+}
+
+/* Container ສໍາລັບ District Item */
+.district-item-container {
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
+  padding-bottom: 8px; /* Padding ລຸ່ມ */
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05); /* ຂອບລຸ່ມແບບຈຸດ */
+}
+.district-item-container:last-child {
+  border-bottom: none; /* ລົບຂອບລຸ່ມຂອງລາຍການສຸດທ້າຍ */
+  padding-bottom: 0; /* ລົບ Padding ລຸ່ມຂອງລາຍການສຸດທ້າຍ */
+}
+
+/* District Item */
+.district-item {
+  display: flex; /* ໃຊ້ Flexbox */
+  justify-content: space-between; /* ຈັດວາງຫ່າງກັນ */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  font-size: 0.9rem; /* ຂະໜາດ Font */
+}
+
+/* Label ສໍາລັບ Checkbox ໃນ District Item */
+.district-item label {
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+  appearance: none; /* ເຊື່ອງ Checkbox ເດີມ */
+  width: 18px; /* ຄວາມກວ້າງ */
+  height: 18px; /* ຄວາມສູງ */
+  border: 1px solid var(--color-border-light); /* ຂອບ */
+  border-radius: 4px; /* ຂອບມົນ */
+  background-color: var(--color-primary-bg); /* ສີພື້ນຫຼັງ */
+  display: inline-block; /* ສະແດງເປັນ Inline Block */
+  position: relative; /* ຕໍາແໜ່ງ Relative */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+}
+input[type="checkbox"]:checked {
+  background-color: var(--color-accent-blue); /* ສີພື້ນຫຼັງເມື່ອຖືກເລືອກ */
+  border-color: var(--color-accent-blue); /* ສີຂອບເມື່ອຖືກເລືອກ */
+}
+input[type="checkbox"]:checked::after {
+  content: "✔"; /* ເຄື່ອງໝາຍ Check */
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: 50%; /* ຕໍາແໜ່ງເທິງ 50% */
+  left: 50%; /* ຕໍາແໜ່ງຊ້າຍ 50% */
+  transform: translate(-50%, -50%); /* ຈັດກາງ */
+  color: white; /* ສີຂາວ */
+  font-size: 12px; /* ຂະໜາດ Font */
+}
+input[type="checkbox"]:disabled {
+  opacity: 0.5; /* ຄວາມໂປ່ງໃສເມື່ອຖືກປິດການໃຊ້ງານ */
+  cursor: not-allowed; /* ປ່ຽນ Cursor ເປັນ Not Allowed */
+}
+
+/* Opacity Slider Container */
+.opacity-slider-container {
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
+  width: 120px; /* ຄວາມກວ້າງ */
+}
+
+/* Opacity Slider */
+.opacity-slider {
+  -webkit-appearance: none; /* ເຊື່ອງ Style ເດີມຂອງ Webkit */
+  appearance: none; /* ເຊື່ອງ Style ເດີມ */
+  width: 100%; /* ຄວາມກວ້າງ 100% */
+  height: 4px; /* ຄວາມສູງ */
+  background: #444; /* ສີພື້ນຫຼັງ */
+  outline: none; /* ເຊື່ອງ Outline */
+  border-radius: 2px; /* ຂອບມົນ */
+  transition: opacity 0.2s; /* ເອັບເຟັກການປ່ຽນແປງຄວາມໂປ່ງໃສ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+}
+.opacity-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* ເຊື່ອງ Style ເດີມຂອງ Thumb */
+  appearance: none; /* ເຊື່ອງ Style ເດີມຂອງ Thumb */
+  width: 14px; /* ຄວາມກວ້າງຂອງ Thumb */
+  height: 14px; /* ຄວາມສູງຂອງ Thumb */
+  border-radius: 50%; /* ເຮັດໃຫ້ Thumb ກົມ */
+  background: var(--color-accent-blue); /* ສີຂອງ Thumb */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  border: 1px solid white; /* ຂອບຂອງ Thumb */
+}
+.opacity-slider::-moz-range-thumb {
+  width: 14px; /* ຄວາມກວ້າງຂອງ Thumb */
+  height: 14px; /* ຄວາມສູງຂອງ Thumb */
+  border-radius: 50%; /* ເຮັດໃຫ້ Thumb ກົມ */
+  background: var(--color-accent-blue); /* ສີຂອງ Thumb */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  border: 1px solid white; /* ຂອບຂອງ Thumb */
+}
+.opacity-slider:disabled {
+  background: #333; /* ສີພື້ນຫຼັງເມື່ອຖືກປິດການໃຊ້ງານ */
+  cursor: not-allowed; /* ປ່ຽນ Cursor ເປັນ Not Allowed */
+}
+.opacity-slider:disabled::-webkit-slider-thumb {
+  background: #666; /* ສີຂອງ Thumb ເມື່ອຖືກປິດການໃຊ້ງານ */
+  cursor: not-allowed; /* ປ່ຽນ Cursor ເປັນ Not Allowed */
+}
+.opacity-slider:disabled::-moz-range-thumb {
+  background: #666; /* ສີຂອງ Thumb ເມື່ອຖືກປິດການໃຊ້ງານ */
+  cursor: not-allowed; /* ປ່ຽນ Cursor ເປັນ Not Allowed */
+}
+
+/* ຄ່າຄວາມໂປ່ງໃສ */
+.opacity-value {
+  font-size: 0.75rem; /* ຂະໜາດ Font */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  width: 30px; /* ຄວາມກວ້າງ */
+  text-align: right; /* ຈັດວາງຂວາ */
+}
+
+/* ປຸ່ມໂຫຼດຂໍ້ມູນ */
+.load-data-button {
+  background-color: var(--color-accent-blue); /* ສີພື້ນຫຼັງ */
+  color: white; /* ສີຕົວໜັງສື */
+  border: none; /* ບໍ່ມີຂອບ */
+  padding: 10px 15px; /* Padding */
+  border-radius: 8px; /* ຂອບມົນ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  font-size: 0.9rem; /* ຂະໜາດ Font */
+  font-weight: 500; /* ນໍ້າໜັກ Font */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  justify-content: center; /* ຈັດວາງແນວນອນກາງ */
+  margin-top: 15px; /* Margin ເທິງ */
+  transition: background-color 0.2s ease; /* ເອັບເຟັກການປ່ຽນແປງສີພື້ນຫຼັງ */
+  width: 100%; /* ຄວາມກວ້າງ 100% */
+}
+.load-data-button:hover:not(:disabled) {
+  background-color: var(--color-accent-blue-hover); /* ສີເມື່ອ Hover */
+}
+.load-data-button:disabled {
+  background-color: #555; /* ສີພື້ນຫຼັງເມື່ອຖືກປິດການໃຊ້ງານ */
+  cursor: not-allowed; /* ປ່ຽນ Cursor ເປັນ Not Allowed */
+}
+
+/* ຂໍ້ຄວາມບໍ່ມີເມືອງ */
+.no-districts-message {
+  font-style: italic; /* ຕົວໜັງສືອຽງ */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  text-align: center; /* ຈັດກາງ */
+  padding: 15px 0; /* Padding */
+}
+
+/* Parcel Info Panel */
+.parcel-info-panel {
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: calc(var(--header-height) + 1rem); /* ຕໍາແໜ່ງເທິງ (ຫຼັງ Header) */
+  left: 1rem; /* ຕໍາແໜ່ງຊ້າຍ */
+  width: 380px; /* ຄວາມກວ້າງ */
+  background-color: rgba(30, 30, 30, 0.95); /* ສີພື້ນຫຼັງແບບໂປ່ງໃສ */
+  backdrop-filter: blur(10px); /* ເອັບເຟັກ Blur */
+  border-radius: 12px; /* ຂອບມົນ */
+  border: 1px solid rgba(255, 255, 255, 0.15); /* ຂອບ */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37); /* ເງົາ */
+  padding: 1.25rem 1.5rem; /* Padding */
+  z-index: 1000; /* Z-index */
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 1rem; /* ໄລຍະຫ່າງລະຫວ່າງລາຍການ */
+  overflow-y: auto; /* ເປີດ Scrollbar ແນວຕັ້ງຖ້າເນື້ອຫາເກີນ */
+  max-height: calc(100% - var(--header-height) - 2rem); /* ຄວາມສູງສູງສຸດ */
+}
+
+/* Header ຂອງ Parcel Info Panel */
+.parcel-info-header {
+  display: flex; /* ໃຊ້ Flexbox */
+  justify-content: space-between; /* ຈັດວາງຫ່າງກັນ */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  padding-bottom: 1rem; /* Padding ລຸ່ມ */
+  border-bottom: 1px solid var(--color-border-light); /* ຂອບລຸ່ມ */
+  margin-bottom: 0.5rem; /* Margin ລຸ່ມ */
+}
+.parcel-info-header h3 {
+  margin: 0; /* ລົບຂອບນອກ */
+  font-size: 1.15rem; /* ຂະໜາດ Font */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+
+/* ປຸ່ມປິດ */
+.close-button {
+  background: none; /* ບໍ່ມີພື້ນຫຼັງ */
+  border: none; /* ບໍ່ມີຂອບ */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  transition: color 0.2s ease; /* ເອັບເຟັກການປ່ຽນແປງສີ */
+}
+.close-button:hover {
+  color: white; /* ສີເມື່ອ Hover */
+}
+
+/* ເນື້ອຫາຂອງ Parcel Info */
+.parcel-info-content {
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 0.6rem; /* ໄລຍະຫ່າງ */
+}
+
+/* ແຖວຂໍ້ມູນ */
+.info-row {
+  display: flex; /* ໃຊ້ Flexbox */
+  justify-content: space-between; /* ຈັດວາງຫ່າງກັນ */
+  align-items: flex-start; /* ຈັດວາງແນວຕັ້ງດ້ານເທິງ */
+  font-size: 0.9rem; /* ຂະໜາດ Font */
+}
+
+/* Label ຂໍ້ມູນ */
+.info-label {
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  min-width: 120px; /* ຄວາມກວ້າງຕ່ໍາສຸດ */
+  flex-shrink: 0; /* ບໍ່ໃຫ້ຫຍໍ້ລົງ */
+}
+
+/* ຄ່າຂໍ້ມູນ */
+.info-value {
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+  text-align: right; /* ຈັດວາງຂວາ */
+  flex-grow: 1; /* ໃຫ້ຂະຫຍາຍເຕັມທີ່ */
+  word-break: break-word; /* ຕັດຄໍາເມື່ອເກີນ */
+}
+
+/* Loading Bar Component */
+.loading-bar-container {
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: 0; /* ຕໍາແໜ່ງເທິງສຸດ */
+  left: 0; /* ຕໍາແໜ່ງຊ້າຍສຸດ */
+  right: 0; /* ຕໍາແໜ່ງຂວາສຸດ */
+  z-index: 1001; /* Z-index ສູງ */
+  width: 100%; /* ຄວາມກວ້າງ 100% */
+}
+
+/* Drawing Toolbar */
 .drawing-toolbar-header {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: var(--header-height); /* ຕໍາແໜ່ງຫຼັງ Header */
+  left: 50%; /* ຈັດກາງແນວນອນ */
+  transform: translateX(-50%); /* ຈັດກາງແນວນອນທີ່ແທ້ຈິງ */
+  z-index: 1000; /* Z-index */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  gap: 8px; /* ໄລຍະຫ່າງລະຫວ່າງລາຍການ */
+  background-color: rgba(30, 30, 30, 0.75); /* ສີພື້ນຫຼັງແບບໂປ່ງໃສ */
+  backdrop-filter: blur(10px); /* ເອັບເຟັກ Blur */
+  border-radius: 0 0 12px 12px; /* ຂອບມົນດ້ານລຸ່ມ */
+  border: 1px solid rgba(255, 255, 255, 0.15); /* ຂອບ */
+  border-top: none; /* ບໍ່ມີຂອບເທິງ */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* ເງົາ */
+  padding: 8px 15px; /* Padding */
 }
+
+/* ປຸ່ມ Toolbar */
 .toolbar-button {
+  /* <<<<<<< HEAD */
   background: transparent;
   border: none;
   color: #ccc;
@@ -170,21 +581,24 @@ body,
   align-items: center;
   transition: all 0.2s ease; /* ການເຄື່ອນໄຫວເມື່ອ hover */
 }
-.toolbar-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+.toolbar-button:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.1); /* ສີພື້ນຫຼັງເມື່ອ Hover */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
 }
 .toolbar-button.active {
-  background: var(--color-accent-blue);
-  color: white;
-}
-.toolbar-separator {
-  width: 1px;
-  height: 20px;
-  margin: 0 8px;
-  background-color: #444;
+  background-color: var(--color-accent-blue); /* ສີພື້ນຫຼັງເມື່ອ Active */
+  color: white; /* ສີຕົວໜັງສື */
 }
 
+/* ตัวแบ่ง Toolbar */
+.toolbar-separator {
+  width: 1px; /* ຄວາມກວ້າງ */
+  height: 20px; /* ຄວາມສູງ */
+  background-color: rgba(255, 255, 255, 0.2); /* ສີພື້ນຫຼັງ */
+  margin: 0 5px; /* Margin ຊ້າຍຂວາ */
+}
+
+/* <<<<<<< HEAD */
 /* Toggle button - ປຸ່ມສຳລັບເປີດ/ປິດ */
 .sidebar-toggle {
   left: -40px;
@@ -294,13 +708,26 @@ sidebar-toggle i {
 /* ==========================================================================
    5. Other Floating UI Controls - ຄວບຄຸມ UI ອື່ນໆ
    ========================================================================== */
+
 .base-map-switcher select {
-  background-color: var(--color-inset-bg);
-  color: var(--color-text-light);
-  border: 1px solid var(--color-border-light);
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
+  background-color: transparent; /* ພື້ນຫຼັງໂປ່ງໃສ */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+  border: 1px solid var(--color-border-light); /* ຂອບ */
+  border-radius: 6px; /* ຂອບມົນ */
+  padding: 6px 10px; /* Padding */
+  font-size: 0.9rem; /* ຂະໜາດ Font */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  outline: none; /* ເຊື່ອງ Outline */
+  -webkit-appearance: none; /* ເຊື່ອງ Appearance ເດີມ */
+  -moz-appearance: none; /* ເຊື່ອງ Appearance ເດີມ */
+  appearance: none; /* ເຊື່ອງ Appearance ເດີມ */
+  padding-right: 25px; /* Padding ຂວາເພື່ອໃຫ້ພໍດີກັບ Arrow */
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>'); /* Icon Arrow */
+  background-repeat: no-repeat; /* ບໍ່ໃຫ້ຊ້ໍາ Icon */
+  background-position: right 8px center; /* ຕໍາແໜ່ງ Icon */
+  background-size: 14px; /* ຂະໜາດ Icon */
 }
+/* <<<<<<< HEAD */
 .coordinate-widget-container {
   position: absolute;
   bottom: 1rem;
@@ -325,41 +752,222 @@ sidebar-toggle i {
   background-color: var(--color-accent-blue-hover);
   transform: scale(1.05); /* ຂະຫຍາຍເມື່ອ hover */
 }
+
+/* Coordinate Bar */
 .coordinate-bar {
-  width: 380px;
-  background-color: rgba(30, 30, 30, 0.75);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37);
-  padding: 1rem 1.25rem;
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  bottom: 1rem; /* ຕໍາແໜ່ງລຸ່ມ */
+  left: 50%; /* ຈັດກາງແນວນອນ */
+  transform: translateX(-50%); /* ຈັດກາງແນວນອນທີ່ແທ້ຈິງ */
+  z-index: 1000; /* Z-index */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  background-color: rgba(30, 30, 30, 0.75); /* ສີພື້ນຫຼັງແບບໂປ່ງໃສ */
+  backdrop-filter: blur(10px); /* ເອັບເຟັກ Blur */
+  border-radius: 12px; /* ຂອບມົນ */
+  border: 1px solid rgba(255, 255, 255, 0.15); /* ຂອບ */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37); /* ເງົາ */
+  padding: 0.75rem 1.25rem; /* Padding */
+}
+
+/* ຂໍ້ມູນພິກັດໃນ Coordinate Bar */
+.coords-display {
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
+  font-size: 0.9rem; /* ຂະໜາດ Font */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+
+/* UTM Display */
+.utm-display {
+  font-size: 0.75rem; /* ຂະໜາດ Font */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  margin-left: 10px; /* Margin ຊ້າຍ */
+}
+
+/* ປຸ່ມໃນ Coordinate Bar */
+.coordinate-bar button {
+  background: none; /* ບໍ່ມີພື້ນຫຼັງ */
+  border: none; /* ບໍ່ມີຂອບ */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  margin-left: 10px; /* Margin ຊ້າຍ */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  transition: color 0.2s ease; /* ເອັບເຟັກການປ່ຽນແປງສີ */
+}
+.coordinate-bar button:hover {
+  color: var(--color-accent-blue); /* ສີເມື່ອ Hover */
+}
+
+/* ຂໍ້ຄວາມສຳເລັດການ Copy */
+.copy-success-message {
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  top: -30px; /* ຕໍາແໜ່ງເທິງ */
+  left: 50%; /* ຈັດກາງແນວນອນ */
+  transform: translateX(-50%); /* ຈັດກາງແນວນອນທີ່ແທ້ຈິງ */
+  background-color: #4caf50; /* ສີຂຽວ */
+  color: white; /* ສີຂາວ */
+  padding: 5px 10px; /* Padding */
+  border-radius: 5px; /* ຂອບມົນ */
+  font-size: 0.8rem; /* ຂະໜາດ Font */
+  white-space: nowrap; /* ບໍ່ໃຫ້ຕັດແຖວ */
+  animation: fadeOut 2s forwards; /* ເອັບເຟັກ Fade Out */
+}
+
+/* Keyframe ສໍາລັບ Fade Out */
+@keyframes fadeOut {
+  from {
+    opacity: 1; /* ເລີ່ມຕົ້ນໂປ່ງໃສ 100% */
+  }
+  to {
+    opacity: 0; /* ສິ້ນສຸດໂປ່ງໃສ 0% */
+    visibility: hidden; /* ເຊື່ອງ Element */
+  }
+}
+
+/* Panel History */
+.history-panel {
+  position: absolute; /* ຕໍາແໜ່ງ Absolute */
+  bottom: 60px; /* ຕໍາແໜ່ງລຸ່ມ */
+  left: 50%; /* ຈັດກາງແນວນອນ */
+  transform: translateX(-50%); /* ຈັດກາງແນວນອນທີ່ແທ້ຈິງ */
+  width: 320px; /* ຄວາມກວ້າງ */
+  max-height: 250px; /* ຄວາມສູງສູງສຸດ */
+  background-color: rgba(30, 30, 30, 0.85); /* ສີພື້ນຫຼັງແບບໂປ່ງໃສ */
+  backdrop-filter: blur(10px); /* ເອັບເຟັກ Blur */
+  border-radius: 12px; /* ຂອບມົນ */
+  border: 1px solid rgba(255, 255, 255, 0.15); /* ຂອບ */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37); /* ເງົາ */
+  padding: 1rem; /* Padding */
+  z-index: 999; /* Z-index */
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 10px; /* ໄລຍະຫ່າງ */
+  overflow-y: auto; /* ເປີດ Scrollbar ແນວຕັ້ງ */
+}
+.history-header {
+  display: flex; /* ໃຊ້ Flexbox */
+  justify-content: space-between; /* ຈັດວາງຫ່າງກັນ */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  padding-bottom: 10px; /* Padding ລຸ່ມ */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* ຂອບລຸ່ມ */
+}
+.history-header h4 {
+  margin: 0; /* ລົບຂອບນອກ */
+  font-size: 1rem; /* ຂະໜາດ Font */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+.history-clear-btn {
+  background: none; /* ບໍ່ມີພື້ນຫຼັງ */
+  border: none; /* ບໍ່ມີຂອບ */
+  color: #ff6b6b; /* ສີແດງ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  font-size: 0.85rem; /* ຂະໜາດ Font */
+  gap: 5px; /* ໄລຍະຫ່າງ */
+  transition: color 0.2s ease; /* ເອັບເຟັກການປ່ຽນແປງສີ */
+}
+.history-clear-btn:hover {
+  color: #ff3b3b; /* ສີເມື່ອ Hover */
+}
+.history-list {
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
+}
+.history-item {
+  background-color: var(--color-inset-bg); /* ສີພື້ນຫຼັງ inset */
+  border-radius: 8px; /* ຂອບມົນ */
+  padding: 8px 12px; /* Padding */
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 4px; /* ໄລຍະຫ່າງ */
+  font-size: 0.8rem; /* ຂະໜາດ Font */
+  border: 1px solid rgba(255, 255, 255, 0.08); /* ຂອບ */
+}
+.history-item-top {
+  display: flex; /* ໃຊ້ Flexbox */
+  justify-content: space-between; /* ຈັດວາງຫ່າງກັນ */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+.history-item-date {
+  font-size: 0.7rem; /* ຂະໜາດ Font */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+}
+.history-item-coords {
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 2px; /* ໄລຍະຫ່າງ */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+.history-item-utm {
+  font-size: 0.75rem; /* ຂະໜາດ Font */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+}
+.history-item-actions {
+  display: flex; /* ໃຊ້ Flexbox */
+  gap: 8px; /* ໄລຍະຫ່າງ */
+  margin-top: 5px; /* Margin ເທິງ */
+  justify-content: flex-end; /* ຈັດວາງຂວາ */
+}
+.history-item-actions button {
+  background: none; /* ບໍ່ມີພື້ນຫຼັງ */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* ຂອບ */
+  border-radius: 4px; /* ຂອບມົນ */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
+  padding: 4px 8px; /* Padding */
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  justify-content: center; /* ຈັດວາງແນວນອນກາງ */
+  transition: all 0.2s ease; /* ເອັບເຟັກການປ່ຽນແປງ */
+  margin-left: 0; /* ລົບ Margin ຊ້າຍ */
+}
+.history-item-actions button:hover {
+  background-color: rgba(255, 255, 255, 0.15); /* ສີພື້ນຫຼັງເມື່ອ Hover */
+  color: var(--color-text-light); /* ສີຕົວໜັງສື */
+}
+.history-item-actions button.remove-btn:hover {
+  background-color: #ff6b6b; /* ສີແດງເມື່ອ Hover */
+  color: white; /* ສີຂາວ */
+}
+.history-list .empty {
+  text-align: center; /* ຈັດກາງ */
+  font-style: italic; /* ຕົວໜັງສືອຽງ */
+  color: var(--color-text-muted); /* ສີຕົວໜັງສືມົວ */
+  padding: 20px 0; /* Padding */
 }
 
 /* Styles for LayerToggles Component - ຮູບແບບສຳລັບຄວບຄຸມ Layer */
 .layer-controls-grid {
-  padding: 12px 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  padding: 12px 4px; /* Padding */
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 12px; /* ໄລຍະຫ່າງ */
 }
 .layer-control-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: flex; /* ໃຊ້ Flexbox */
+  flex-direction: column; /* ຈັດວາງເປັນຄໍລໍາ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
 }
 .layer-toggle-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  cursor: pointer;
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
+  font-size: 0.9rem; /* ຂະໜາດ Font */
+  cursor: pointer; /* ປ່ຽນ Cursor ເປັນ Pointer */
 }
 .opacity-slider-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex; /* ໃຊ້ Flexbox */
+  align-items: center; /* ຈັດວາງແນວຕັ້ງກາງ */
+  gap: 8px; /* ໄລຍະຫ່າງ */
 }
 .opacity-slider {
+  /* <<<<<<< HEAD */
   -webkit-appearance: none;
   appearance: none;
   width: 100%;

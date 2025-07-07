@@ -1,10 +1,11 @@
 // App.jsx
 import React, { useState, useMemo, useCallback } from "react";
-import "ol/ol.css";
-import "./index.css";
-import { Globe } from "lucide-react";
-import { fromLonLat } from "ol/proj";
+import "ol/ol.css"; // ນໍາເຂົ້າໄຟລ໌ CSS ພື້ນຖານຂອງ OpenLayers
+import "./index.css"; // ນໍາເຂົ້າໄຟລ໌ CSS ຂອງແອັບພລິເຄຊັນ
+import { Globe } from "lucide-react"; // ນໍາເຂົ້າໄອຄອນ Globe ຈາກ lucide-react
+import { fromLonLat } from "ol/proj"; // ນໍາເຂົ້າຟັງຊັນ fromLonLat ສໍາລັບການປ່ຽນລະບົບພິກັດ
 
+// <<<<<<< HEAD
 // Import Components
 import MapComponent from "./MapComponent";
 import ProvinceControls from "./components/ui/ProvinceControls";
@@ -19,14 +20,15 @@ import RoadLayer from "./components/map/RoadLayer";
 import BuildingLayer from "./components/map/BuildingLayer";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-// Import Data
-import initialLaoDistricts from "./data/LaoDistrictsData";
+// ນໍາເຂົ້າຂໍ້ມູນ
+import initialLaoDistricts from "./data/LaoDistrictsData"; // ຂໍ້ມູນເບື້ອງຕົ້ນຂອງເມືອງຕ່າງໆໃນລາວ
 
 /**
  * ຄອມໂປເນັ້ນຫຼັກຂອງແອັບພລິເຄຊັ່ນ
  * Main application component
  */
 function App() {
+  // <<<<<<< HEAD
   // Map State - ສະຖານະການໃຊ້ງານແຜນທີ່
   const [viewInstance, setViewInstance] = useState(null);
   const [openLayersLoaded, setOpenLayersLoaded] = useState(false);
@@ -35,14 +37,15 @@ function App() {
   // Data & Layer State - ສະຖານະຂໍ້ມູນແລະ Layer
   const [districts, setDistricts] = useState(initialLaoDistricts);
   const [selectedProvinceForDistricts, setSelectedProvinceForDistricts] =
-    useState("VientianeCapital");
-  const [loadTrigger, setLoadTrigger] = useState(0);
-  const [selectedParcel, setSelectedParcel] = useState(null);
+    useState("VientianeCapital"); // ແຂວງທີ່ຖືກເລືອກສໍາລັບການກັ່ນຕອງເມືອງ
+  const [loadTrigger, setLoadTrigger] = useState(0); // ຕົວ trigger ເພື່ອໂຫຼດຂໍ້ມູນຕອນດິນ
+  const [selectedParcel, setSelectedParcel] = useState(null); // ຕອນດິນທີ່ຖືກເລືອກ (ສໍາລັບສະແດງຂໍ້ມູນ)
   const [layerStates, setLayerStates] = useState({
-    road: { isVisible: true, opacity: 1, isLoading: false, error: null },
-    building: { isVisible: true, opacity: 1, isLoading: false, error: null },
+    road: { isVisible: true, opacity: 1, isLoading: false, error: null }, // ສະຖານະຂອງຊັ້ນຂໍ້ມູນເສັ້ນທາງ
+    building: { isVisible: true, opacity: 1, isLoading: false, error: null }, // ສະຖານະຂອງຊັ້ນຂໍ້ມູນອາຄານ
   });
 
+  // <<<<<<< HEAD
   // Interaction State - ສະຖານະການໂຕ້ຕອບ
   const [interactionMode, setInteractionMode] = useState("None");
   const [isSnapActive, setIsSnapActive] = useState(false);
@@ -53,10 +56,6 @@ function App() {
   const [isLayersExpanded, setLayersExpanded] = useState(true);
 
   // Memoized callback object for MapComponent - ວັດຖຸທີ່ຈື່ຈຳສຳລັບ MapComponent
-  const onMapLoaded = useMemo(
-    () => ({ setViewInstance, setOpenLayersLoaded }),
-    []
-  );
 
   // Derived State for Loading Bar - ສະຖານະທີ່ຄຳນວນມາສຳລັບ Loading Bar
   const overallLoading = useMemo(
@@ -81,95 +80,119 @@ function App() {
     (coords, zoom, provinceName) => {
       if (viewInstance) {
         viewInstance.animate({
-          center: fromLonLat(coords),
-          zoom,
-          duration: 1000,
+          center: fromLonLat(coords), // ຕໍາແໜ່ງສູນກາງ
+          zoom: zoom, // ລະດັບການຊູມ
+          duration: 700, // ໄລຍະເວລາການເຄື່ອນໄຫວ
         });
+        setSelectedProvinceForDistricts(provinceName); // ຕັ້ງແຂວງທີ່ຖືກເລືອກສໍາລັບການກັ່ນຕອງເມືອງ
       }
-      setSelectedProvinceForDistricts(provinceName);
     },
-    [viewInstance]
+    [viewInstance] // ຈະສ້າງຟັງຊັນຄືນໃໝ່ເມື່ອ viewInstance ປ່ຽນແປງ
   );
 
+  // ຈັດການການປິດ/ເປີດຊັ້ນຂໍ້ມູນ
+  const handleLayerVisibilityChange = useCallback((layerKey, isVisible) => {
+    setLayerStates((prev) => ({
+      ...prev,
+      [layerKey]: { ...prev[layerKey], isVisible }, // ອັບເດດຄ່າ isVisible
+    }));
+  }, []);
+
+  // ຈັດການການປ່ຽນແປງຄວາມໂປ່ງໃສຂອງຊັ້ນຂໍ້ມູນ
+  const handleLayerOpacityChange = useCallback((layerKey, opacity) => {
+    setLayerStates((prev) => ({
+      ...prev,
+      [layerKey]: { ...prev[layerKey], opacity }, // ອັບເດດຄ່າ opacity
+    }));
+  }, []);
+
+  // ຈັດການການປິດ/ເປີດເມືອງ
   const toggleDistrict = useCallback((districtName) => {
-    setDistricts((prev) =>
-      prev.map((d) =>
+    setDistricts((prevDistricts) =>
+      prevDistricts.map((d) =>
         d.name === districtName ? { ...d, checked: !d.checked } : d
       )
     );
   }, []);
 
+  // ຈັດການການປ່ຽນແປງຄວາມໂປ່ງໃສຂອງເມືອງ
   const handleDistrictOpacityChange = useCallback((districtName, opacity) => {
-    setDistricts((prev) =>
-      prev.map((d) =>
+    setDistricts((prevDistricts) =>
+      prevDistricts.map((d) =>
         d.name === districtName ? { ...d, opacity: parseFloat(opacity) } : d
       )
     );
   }, []);
 
-  const handleLoadData = useCallback(() => setLoadTrigger((c) => c + 1), []);
-  const handleSetInteractionMode = (mode) =>
-    setInteractionMode((current) => (current === mode ? "None" : mode));
-  const handleToggleSnap = () => setIsSnapActive((prev) => !prev);
-
-  const handleLayerVisibilityChange = (layerName, isVisible) => {
-    setLayerStates((prev) => ({
-      ...prev,
-      [layerName]: { ...prev[layerName], isVisible },
-    }));
-  };
-
-  const handleLayerOpacityChange = (layerName, opacity) => {
-    setLayerStates((prev) => ({
-      ...prev,
-      [layerName]: { ...prev[layerName], opacity },
-    }));
-  };
+  // ຈັດການການໂຫຼດຂໍ້ມູນຕອນດິນ
+  const handleLoadData = useCallback(() => {
+    setLoadTrigger((prev) => prev + 1); // ເພີ່ມຄ່າ loadTrigger ເພື່ອ trigger ການໂຫຼດຂໍ້ມູນ
+  }, []);
 
   const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="app-container">
-      <header className="app-header">
-        <div className="header-section-left">
-          <Globe className="logo-icon" size={26} />
-          <h1>MSM Web GIS</h1>
-          <div className="toolbar-separator"></div>
-          <DrawingToolbar
-            currentInteractionMode={interactionMode}
-            onSetInteractionMode={handleSetInteractionMode}
-            isSnapActive={isSnapActive}
-            onToggleSnap={handleToggleSnap}
-          />
+      <div className="app-header">
+        <div className="header-title">
+          <Globe size={20} style={{ marginRight: "10px" }} />
+          ລະບົບຂໍ້ມູນພູມສາດ
         </div>
-        <div className="header-section-right">
-          <BaseMapSwitcher
-            selectedBaseMap={selectedBaseMap}
-            onSelectBaseMap={setSelectedBaseMap}
-          />
-        </div>
-      </header>
+        <DrawingToolbar
+          currentInteractionMode={interactionMode}
+          onSetInteractionMode={setInteractionMode}
+          isSnapActive={isSnapActive}
+          onToggleSnap={() => setIsSnapActive((prev) => !prev)}
+        />
+      </div>
 
-      <div className="app-main">
+      <div classNamename="main-content">
         <MapComponent
-          onMapLoaded={onMapLoaded}
           selectedBaseMap={selectedBaseMap}
+          setSelectedBaseMap={setSelectedBaseMap}
+          onMapLoaded={setViewInstance}
           interactionMode={interactionMode}
           isSnapActive={isSnapActive}
         >
+          {" "}
+          {/* ສົ່ງ map instance ໄປຍັງ children */}
+          <ParcelLayerControl
+            districts={districts}
+            setDistricts={setDistricts}
+            onParcelSelect={setSelectedParcel}
+            loadTrigger={loadTrigger}
+          />
           <RoadLayer
             isVisible={layerStates.road.isVisible}
             opacity={layerStates.road.opacity}
+            onLoadingChange={(isLoading) =>
+              setLayerStates((prev) => ({
+                ...prev,
+                road: { ...prev.road, isLoading },
+              }))
+            }
+            onErrorChange={(error) =>
+              setLayerStates((prev) => ({
+                ...prev,
+                road: { ...prev.road, error, isLoading: false },
+              }))
+            }
           />
           <BuildingLayer
             isVisible={layerStates.building.isVisible}
             opacity={layerStates.building.opacity}
-          />
-          <ParcelLayerControl
-            districts={districts}
-            setDistricts={setDistricts}
-            loadTrigger={loadTrigger}
-            onParcelSelect={setSelectedParcel}
+            onLoadingChange={(isLoading) =>
+              setLayerStates((prev) => ({
+                ...prev,
+                building: { ...prev.building, isLoading },
+              }))
+            }
+            onErrorChange={(error) =>
+              setLayerStates((prev) => ({
+                ...prev,
+                building: { ...prev.building, error, isLoading: false },
+              }))
+            }
           />
           {overallLoading && (
             <LoadingBar

@@ -28,11 +28,11 @@ import {
  * @param {function} props.onToggleExpansion - Callback ເພື່ອສະຫຼັບການຂະຫຍາຍໂດຍລວມຂອງພາກສ່ວນ LayerToggles.
  */
 const LayerToggles = ({
-  layerStates,
-  onVisibilityChange,
-  onOpacityChange,
-  isExpanded,
-  onToggleExpansion,
+  layerStates, // object ທີ່ເກັບ state ຂອງແຕ່ລະ layer (ເຊັ່ນ: isVisible, opacity)
+  onVisibilityChange, // callback function ເມື່ອປ່ຽນແປງການເບິ່ງເຫັນຂອງ layer
+  onOpacityChange, // callback function ເມື່ອປ່ຽນແປງຄວາມໂປ່ງໃສຂອງ layer
+  isExpanded, // boolean ທີ່ບອກວ່າສ່ວນ controls ຖືກຂະຫຍາຍ (ເປີດ) ຢູ່ບໍ່
+  onToggleExpansion, // callback function ເພື່ອສະຫຼັບການຂະຫຍາຍ/ຫຍໍ້
 }) => {
   // ກໍານົດໂຄງສ້າງສໍາລັບການຈັດກຸ່ມຊັ້ນຂໍ້ມູນເປັນໝວດໝູ່.
   // ແຕ່ລະໝວດໝູ່ມີຊື່ທີ່ສະແດງ, ໄອຄອນທີ່ກ່ຽວຂ້ອງ, ແລະລາຍຊື່ຄີຂອງຊັ້ນຂໍ້ມູນ
@@ -119,12 +119,15 @@ const LayerToggles = ({
   };
 
   return (
+    // ສ່ວນ UI ຂອງ Layer Toggles
     <div className="sidebar-section">
       {/* ຫົວຂໍ້ສໍາລັບພາກສ່ວນ "Layers" ໂດຍລວມ, ພ້ອມຟັງຊັນການສະຫຼັບ */}
+
       <div className="sidebar-section-header" onClick={onToggleExpansion}>
         <h3>
-          <Layers size={16} style={{ marginRight: "8px" }} />
-          ຊັ້ນຂໍ້ມູນ (Layers)
+          <Layers size={16} style={{ marginRight: "8px" }} />{" "}
+          {/* icon Layers */}
+          ຊັ້ນຂໍ້ມູນ (Layers) {/* ຫົວຂໍ້ */}
         </h3>
         {/* ປຸ່ມເພື່ອສະຫຼັບການຂະຫຍາຍຂອງອົງປະກອບ LayerToggles ທັງໝົດ */}
         <button
@@ -223,4 +226,4 @@ const LayerToggles = ({
   );
 };
 
-export default LayerToggles;
+export default LayerToggles; // export component

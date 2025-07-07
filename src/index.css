@@ -1,27 +1,59 @@
-/* src/index.css (Final Full Version) */
+/* Key explanations in Lao:
+
+:root - ກຳນົດຕົວແປ CSS ທີ່ໃຊ້ທົ່ວໄປ
+
+app-container - ພື້ນຖານຂອງແອັບ
+
+map-wrapper ແລະ map-container - ພື້ນທີ່ແຜນທີ່
+
+app-header - ສ່ວນ header ທີ່ລອຍຢູ່ເທິງແຜນທີ່
+
+sidebar - ແຖບເຄື່ອງມືທາງຂວາ
+
+toolbar-button - ຮູບແບບປຸ່ມເຄື່ອງມື
+
+province-button - ປຸ່ມແຂວງ
+
+coordinate-fab - ປຸ່ມວົງມົນສະແດງພິກັດ
+
+opacity-slider - ແຖບເລື່ອນຄວບຄຸມຄວາມໂປ່ງ
+
+ຄຸນລັກສະນະສຳຄັນ:
+
+ໃຊ້ CSS variables ເພື່ອຄວບຄຸມສີແບບສູນກາງ
+
+ມີການອອກແບບແບບ Floating UI ທີ່ລອຍຢູ່ເທິງແຜນທີ່
+
+ມີການຕອບສະໜອງ (responsive) ແລະ ການເຄື່ອນໄຫວ (transitions)
+
+ອອກແບບໃຫ້ເຂົ້າກັບສະພາບແວດລ້ອມມືດ (dark theme)
+ */
 
 /* ==========================================================================
-   1. Base and Global Styles
+   1. Base and Global Styles - ຮູບແບບພື້ນຖານ ແລະ ທົ່ວໄປ
    ========================================================================== */
 :root {
-  --header-height: 50px;
-  --color-primary-bg: #1e1e1e;
-  --color-secondary-bg: rgba(45, 45, 45, 0.95);
-  --color-inset-bg: rgba(0, 0, 0, 0.25);
-  --color-text-light: #f0f0f0;
-  --color-text-muted: #a0a0a0;
-  --color-border-light: rgba(255, 255, 255, 0.1);
-  --color-shadow-dark: rgba(0, 0, 0, 0.5);
-  --color-accent-blue: #007acc;
-  --color-accent-blue-hover: #0095f7;
+  /* ຕັ້ງຄ່າຕົວແປ CSS */
+  --header-height: 50px; /* ຄວາມສູງຂອງ header */
+  --color-primary-bg: #1e1e1e; /* ສີພື້ນຫຼັກ */
+  --color-secondary-bg: rgba(45, 45, 45, 0.95); /* ສີພື້ນຮອງ */
+  --color-inset-bg: rgba(0, 0, 0, 0.25); /* ສີພື້ນດ້ານໃນ */
+  --color-text-light: #f0f0f0; /* ສີຕົວອັກສອນສົດໃສ */
+  --color-text-muted: #a0a0a0; /* ສີຕົວອັກສອນມືດ */
+  --color-border-light: rgba(255, 255, 255, 0.1); /* ສີເສັ້ນຂອບ */
+  --color-shadow-dark: rgba(0, 0, 0, 0.5); /* ສີເງົາ */
+  --color-accent-blue: #007acc; /* ສີຕົວເລັ່ງພື້ນຖານ */
+  --color-accent-blue-hover: #0095f7; /* ສີຕົວເລັ່ງເມື່ອ hover */
 }
 
+/* ຕັ້ງຄ່າພື້ນຖານສຳລັບທຸກເອລີເມັນ */
 *,
 *::before,
 *::after {
-  box-sizing: border-box;
+  box-sizing: border-box; /* ກຳນົດຂະໜາດລວມລວມເຖິງ padding ແລະ border */
 }
 
+/* ຕັ້ງຄ່າພື້ນຖານສຳລັບ html, body ແລະ root element */
 html,
 body,
 #root {
@@ -29,22 +61,22 @@ body,
   padding: 0;
   height: 100%;
   width: 100%;
-  overflow: hidden;
-  font-family: "Phetsarath OT", sans-serif;
-  background-color: var(--color-primary-bg);
-  color: var(--color-text-light);
+  overflow: hidden; /* ປ້ອງກັນການເລື່ອນ */
+  font-family: "Phetsarath OT", sans-serif; /* ກຳນົດຟອນຕົວອັກສອນ */
+  background-color: var(--color-primary-bg); /* ສີພື້ນຫຼັກ */
+  color: var(--color-text-light); /* ສີຕົວອັກສອນ */
 }
 
 /* ==========================================================================
-   2. Main Application Layout (Floating UI Architecture)
+   2. Main Application Layout (Floating UI Architecture) - ໂຄງສ້າງໜ້າຈໍຫຼັກ
    ========================================================================== */
 .app-container {
   position: relative;
   height: 100%;
-  background-color: #2c2c2c; /* Map background color */
+  background-color: #2c2c2c; /* ສີພື້ນຫຼັງແຜນທີ່ */
 }
 
-/* Map fills the entire container as the base layer */
+/* ຮູບແບບສຳລັບພື້ນທີ່ແຜນທີ່ */
 .map-wrapper,
 .map-container {
   position: absolute;
@@ -52,13 +84,13 @@ body,
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1; /* Base layer */
+  z-index: 1; /* ຊັ້ນພື້ນຖານ */
 }
 .map-container:focus {
-  outline: none;
+  outline: none; /* ລຶບເສັ້ນໂຄດອອກເມື່ອ focus */
 }
 
-/* Header floats on top of the map */
+/* ຮູບແບບສຳລັບ header ທີ່ລອຍຢູ່ເທິງແຜນທີ່ */
 .app-header {
   position: absolute;
   top: 0;
@@ -66,16 +98,16 @@ body,
   width: 100%;
   height: var(--header-height);
   padding: 0 16px;
-  z-index: 1001; /* High z-index to stay on top */
+  z-index: 1001; /* ຊັ້ນສູງເພື່ອຢູ່ເທິງສຸດ */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(37, 37, 38, 0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid #333;
+  background: rgba(37, 37, 38, 0.9); /* ພື້ນຫຼັງແບບເຄິ່ງໂປ່ງ */
+  backdrop-filter: blur(10px); /* ການທຳລາຍພື້ນຫຼັງ */
+  border-bottom: 1px solid #333; /* ເສັ້ນຂອບລຸ່ມ */
 }
 
-/* Sidebar floats on top of the map */
+/* ຮູບແບບສຳລັບ sidebar ທີ່ລອຍຢູ່ເທິງແຜນທີ່ */
 .sidebar {
   position: absolute;
   top: calc(var(--header-height) + 1rem);
@@ -84,21 +116,24 @@ body,
   width: 320px;
   z-index: 1001;
   background: var(--color-secondary-bg);
-  border-radius: 12px;
+  border-radius: 12px; /* ມຸມໂຄ້ງ */
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow-y: auto;
+  overflow-y: auto; /* ເຮັດໃຫ້ສາມາດເລື່ອນໄດ້ຖ້າເນື້ອຫາຫຼາຍ */
   box-shadow: 0 8px 30px var(--color-shadow-dark);
-  transition: transform 0.3s ease-in-out;
+  transition: transform 0.3s ease-in-out; /* ການເຄື່ອນໄຫວເມື່ອຍ້ອນຫຼັງ */
+  transform-origin: right center; /* ການເຄື່ອນໄຫວຈາກຂວາ */
 }
 .sidebar.collapsed {
-  transform: translateX(calc(100% + 2rem));
+  /* transform: translateX(calc(100% + 2rem)); ເລື່ອນ sidebar ອອກໄປທາງຂວາ */
+  transform: translateX(calc(100% - 40px)); /* ຍັງເຫຼືອສ່ວນປຸ່ມ */
+  opacity: 0.8;
 }
 
 /* ==========================================================================
-   3. Header Content
+   3. Header Content - ເນື້ອຫາ Header
    ========================================================================== */
 .header-section-left,
 .header-section-right {
@@ -108,11 +143,11 @@ body,
 }
 .logo-icon {
   color: var(--color-accent-blue-hover);
-  flex-shrink: 0;
+  flex-shrink: 0; /* ປ້ອງກັນບີບຕົວ */
 }
 .app-header h1 {
   font-size: 1.1rem;
-  white-space: nowrap;
+  white-space: nowrap; /* ປ້ອງກັນຂໍ້ຄວາມຂຶ້ນບົວແບບອັດຕະໂນມັດ */
   margin: 0;
 }
 .base-map-label {
@@ -133,7 +168,7 @@ body,
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease; /* ການເຄື່ອນໄຫວເມື່ອ hover */
 }
 .toolbar-button:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -150,8 +185,55 @@ body,
   background-color: #444;
 }
 
+/* Toggle button - ປຸ່ມສຳລັບເປີດ/ປິດ */
+.sidebar-toggle {
+  left: -40px;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  background: var(--color-secondary-bg);
+  border: none;
+  border-radius: 12px 12px 12px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-light);
+  box-shadow: -5px 0 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+  background: var(--color-accent-blue);
+  color: white;
+}
+
+sidebar-toggle i {
+  transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed .sidebar-toggle i {
+  transform: rotate(180deg);
+}
+
+.sidebar.collapsed .sidebar-section {
+  opacity: 0;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 99vw;
+    right: 0.5rem;
+    left: 0.5rem;
+  }
+}
+
 /* ==========================================================================
-   4. Sidebar Content (Properties Panel Style)
+   4. Sidebar Content (Properties Panel Style) - ເນື້ອຫາ Sidebar
    ========================================================================== */
 .sidebar-section {
   background: none;
@@ -159,16 +241,20 @@ body,
   border-bottom: 1px solid var(--color-border-light);
 }
 .sidebar-section:last-child {
-  border-bottom: none;
+  border-bottom: none; /* ລຶບເສັ້ນຂອບສຳລັບ section ສຸດທ້າຍ */
 }
 .sidebar-section-header {
   background-color: rgba(255, 255, 255, 0.05);
-  padding: 8px 12px;
-  cursor: pointer;
+  padding: 6px 10px;
+  font-weight: bold;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--color-border-light);
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 6px;
 }
+
 .sidebar-section-header:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
@@ -176,7 +262,7 @@ body,
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: uppercase; /* ເປັນຕົວພິມໃຫຍ່ທັງໝົດ */
 }
 .property-grid {
   padding: 12px;
@@ -186,7 +272,7 @@ body,
 }
 .province-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr; /* 2 ຄອລຳທີ່ມີຂະໜາດເທົ່າກັນ */
   gap: 0.5rem;
 }
 .province-button {
@@ -206,7 +292,7 @@ body,
 }
 
 /* ==========================================================================
-   5. Other Floating UI Controls
+   5. Other Floating UI Controls - ຄວບຄຸມ UI ອື່ນໆ
    ========================================================================== */
 .base-map-switcher select {
   background-color: var(--color-inset-bg);
@@ -224,7 +310,7 @@ body,
 .coordinate-fab {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: 50%; /* ເຮັດໃຫ້ເປັນຮູບວົງມົນ */
   background-color: var(--color-accent-blue);
   color: white;
   border: none;
@@ -237,7 +323,7 @@ body,
 }
 .coordinate-fab:hover {
   background-color: var(--color-accent-blue-hover);
-  transform: scale(1.05);
+  transform: scale(1.05); /* ຂະຫຍາຍເມື່ອ hover */
 }
 .coordinate-bar {
   width: 380px;
@@ -249,7 +335,7 @@ body,
   padding: 1rem 1.25rem;
 }
 
-/* Styles for LayerToggles Component */
+/* Styles for LayerToggles Component - ຮູບແບບສຳລັບຄວບຄຸມ Layer */
 .layer-controls-grid {
   padding: 12px 4px;
   display: flex;
@@ -309,6 +395,6 @@ body,
 .opacity-value {
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  width: 40px; /* Fixed width for alignment */
+  width: 40px;
   text-align: right;
 }

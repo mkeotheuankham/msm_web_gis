@@ -1,3 +1,4 @@
+// MapComponent.jsx
 import React, { useEffect, useRef, useState } from "react";
 import "ol/ol.css";
 import Map from "ol/Map";
@@ -15,6 +16,10 @@ import Select from "ol/interaction/Select";
 import BaseMapSwitcher from "./components/map/BaseMapSwitcher";
 import CoordinateBar from "./components/ui/CoordinateBar";
 
+/**
+ * ຄອມໂປເນັ້ນຫຼັກຂອງແຜນທີ່
+ * Main map component that handles OpenLayers map initialization and interactions
+ */
 function MapComponent({
   selectedBaseMap,
   setSelectedBaseMap,
@@ -27,11 +32,11 @@ function MapComponent({
   const [map, setMap] = useState(null);
   const drawingSourceRef = useRef(new VectorSource());
 
-  // Refs to hold interactions
+  // Refs to hold interactions - ຕົວອ້າງອີງເກັບການໂຕ້ຕອບ
   const interactionRef = useRef(null);
   const snapInteractionRef = useRef(null);
 
-  // Effect to create the map instance ONE TIME
+  // Effect to create the map instance ONE TIME - ສ້າງຕົວຢ່າງແຜນທີ່ຄັ້ງດຽວ
   useEffect(() => {
     const drawingLayer = new VectorLayer({
       source: drawingSourceRef.current,
@@ -42,8 +47,8 @@ function MapComponent({
       target: mapRef.current,
       layers: [drawingLayer], // Add drawing layer on init
       view: new View({
-        center: fromLonLat([103.85, 18.2]),
-        zoom: 7,
+        center: fromLonLat([103.85, 18.2]), // ຈຸດກາງແຜນທີ່ (ວຽງຈັນ)
+        zoom: 7, // ລະດັບການຂະຫຍາຍ
       }),
       controls: defaultControls(),
     });
@@ -57,22 +62,22 @@ function MapComponent({
 
     return () => {
       if (mapObject) {
-        mapObject.setTarget(undefined);
+        mapObject.setTarget(undefined); // ທຳຄວາມສະອາດເມື່ອ component unmount
       }
     };
   }, [onMapLoaded]);
 
-  // Effect to handle base map switching
+  // Effect to handle base map switching - ຈັດການການປ່ຽນແຜນທີ່ພື້ນຖານ
   useEffect(() => {
     if (!map) return;
     // BaseMapSwitcher component now handles this logic
   }, [map, selectedBaseMap]);
 
-  // Effect to handle drawing & editing interactions
+  // Effect to handle drawing & editing interactions - ຈັດການການແຕ້ມແລະແກ້ໄຂ
   useEffect(() => {
     if (!map || typeof interactionMode !== "string") return;
 
-    // Clean up previous interactions
+    // Clean up previous interactions - ລຶບການໂຕ້ຕອບກ່ອນໜ້າ
     if (interactionRef.current) {
       map.removeInteraction(interactionRef.current);
       interactionRef.current = null;
@@ -113,7 +118,7 @@ function MapComponent({
     }
   }, [map, interactionMode]);
 
-  // Effect to handle snapping
+  // Effect to handle snapping - ຈັດການການ snap
   useEffect(() => {
     if (!map) return;
 

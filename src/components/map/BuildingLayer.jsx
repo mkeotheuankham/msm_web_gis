@@ -1,148 +1,165 @@
-import React, { useEffect, useRef, useMemo, useCallback } from "react";
-import VectorLayer from "ol/layer/Vector";
-import VectorSource from "ol/source/Vector";
-import GeoJSON from "ol/format/GeoJSON";
-import { Fill, Stroke, Style } from "ol/style";
+import React, { useEffect, useRef, useMemo, useCallback } from "react"; // import hooks ທີ່ຈຳເປັນຈາກ React
+import VectorLayer from "ol/layer/Vector"; // import VectorLayer ຈາກ OpenLayers ສຳລັບສ້າງ layer ຂອງ vector data
+import VectorSource from "ol/source/Vector"; // import VectorSource ຈາກ OpenLayers ສຳລັບແຫຼ່ງຂໍ້ມູນ vector
+import GeoJSON from "ol/format/GeoJSON"; // import GeoJSON ຈາກ OpenLayers ສຳລັບການອ່ານຂໍ້ມູນ GeoJSON
+import { Fill, Stroke, Style } from "ol/style"; // import Fill, Stroke, Style ຈາກ OpenLayers ສຳລັບການກຳນົດ style ຂອງ feature
 
-const MAX_RETRIES = 3;
-const BASE_RETRY_DELAY = 1000;
-const FETCH_TIMEOUT = 15000;
+const MAX_RETRIES = 3; // ຈຳນວນຄັ້ງສູງສຸດທີ່ຈະລອງ fetch ຂໍ້ມູນໃໝ່ຖ້າມີ error
+const BASE_RETRY_DELAY = 1000; // ໄລຍະເວລາລໍຖ້າກ່ອນທີ່ຈະລອງໃໝ່ຄັ້ງທຳອິດ (in milliseconds)
+const FETCH_TIMEOUT = 15000; // ໄລຍະເວລາສູງສຸດໃນການ fetch ຂໍ້ມູນກ່ອນທີ່ຈະ timeout (in milliseconds)
 
 const BuildingLayer = ({
-  map,
-  isVisible,
-  opacity,
-  onLoadingChange,
-  onErrorChange,
+  map, // object ແຜນທີ່ OpenLayers
+  isVisible, // ກຳນົດວ່າ layer ຄວນເຫັນໄດ້ຫຼືບໍ່
+  opacity, // ຄວາມໂປ່ງໃສຂອງ layer
+  onLoadingChange, // callback function ເມື່ອສະຖານະການໂຫຼດຂໍ້ມູນປ່ຽນແປງ
+  onErrorChange, // callback function ເມື່ອມີ error ເກີດຂຶ້ນ
 }) => {
-  const layerRef = useRef(null);
-  const sourceRef = useRef(new VectorSource());
-  const retryTimeoutIdRef = useRef(null);
-  const isFetchingRef = useRef(false);
+  const layerRef = useRef(null); // useRef ເກັບ reference ຂອງ OpenLayers VectorLayer
+  const sourceRef = useRef(new VectorSource()); // useRef ເກັບ reference ຂອງ OpenLayers VectorSource
+  const retryTimeoutIdRef = useRef(null); // useRef ເກັບ ID ຂອງ setTimeout ສຳລັບການ retry
+  const isFetchingRef = useRef(false); // useRef ເກັບ state ວ່າກຳລັງ fetch ຂໍ້ມູນຢູ່ບໍ່
 
   const buildingStyle = useMemo(
+    // useMemo ເພື້ອກຳນົດ style ຂອງອາຄານ ແລະຮັບປະກັນວ່າມັນຈະຖືກສ້າງຂຶ້ນພຽງຄັ້ງດຽວ
     () =>
       new Style({
-        fill: new Fill({ color: "rgba(200, 200, 200, 0.6)" }),
-        stroke: new Stroke({ color: "#555", width: 1 }),
+        fill: new Fill({ color: "rgba(200, 200, 200, 0.6)" }), // ສີເທົາໂປ່ງໃສ
+        stroke: new Stroke({ color: "#555", width: 1 }), // ເສັ້ນຂອບສີເທົາເຂັ້ມ
       }),
     []
   );
 
   const fetchData = useCallback(
+    // useCallback ເພື່ອປ້ອງກັນບໍ່ໃຫ້ fetchData ຖືກສ້າງໃໝ່ທຸກຄັ້ງທີ່ component re-render
     async (attempt = 0) => {
-      if (isFetchingRef.current) return;
-      isFetchingRef.current = true;
-      onLoadingChange(true);
-      onErrorChange(null);
-      clearTimeout(retryTimeoutIdRef.current);
+      // attempt: ຈຳນວນຄັ້ງທີ່ໄດ້ລອງ fetch ມາແລ້ວ
+      if (isFetchingRef.current) return; // ຖ້າກຳລັງ fetch ຢູ່, ບໍ່ຕ້ອງເຮັດຫຍັງ
+      isFetchingRef.current = true; // ຕັ້ງຄ່າວ່າກຳລັງ fetch
+      onLoadingChange(true); // ແຈ້ງເຕືອນວ່າເລີ່ມໂຫຼດ
+      onErrorChange(null); // ລ້າງ error ເກົ່າ
+      clearTimeout(retryTimeoutIdRef.current); // ລ້າງ timeout ການ retry ທີ່ອາດຈະມີຢູ່
 
-      const apiUrl = "https://msmapi.up.railway.app/api/rest/buildings";
+      const apiUrl = "https://msmapi.up.railway.app/api/rest/buildings"; // URL API ສຳລັບຂໍ້ມູນອາຄານ
       console.log(
         `[BuildingLayer] Fetching building data (Attempt ${attempt + 1})`
-      );
+      ); // ສະແດງ log ການ fetch
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+      const controller = new AbortController(); // ສ້າງ AbortController ສຳລັບການຍົກເລີກ request
+      const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT); // ຕັ້ງ timeout ສຳລັບການຍົກເລີກ request
 
       try {
-        const response = await fetch(apiUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
+        const response = await fetch(apiUrl, { signal: controller.signal }); // fetch ຂໍ້ມູນດ້ວຍ signal ສຳລັບ timeout
+        clearTimeout(timeoutId); // ລ້າງ timeout ເມື່ອ fetch ສຳເລັດ
 
         if (!response.ok)
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          // ຖ້າ response ບໍ່ສຳເລັດ (HTTP status ບໍ່ແມ່ນ 2xx)
+          throw new Error(`HTTP error! Status: ${response.status}`); // ຖິ້ມ error
 
-        const data = await response.json();
+        const data = await response.json(); // ປ່ຽນ response ເປັນ JSON
         // --- FIX: Explicitly access the correct key from the API response ---
-        const featureArray = data.cadastre_buildings_in_vientiane_bbox;
+        const featureArray = data.cadastre_buildings_in_vientiane_bbox; // ເຂົ້າເຖິງ key ທີ່ຖືກຕ້ອງຂອງຂໍ້ມູນອາຄານ
 
         if (!featureArray || !Array.isArray(featureArray)) {
+          // ກວດສອບວ່າ featureArray ບໍ່ຫວ່າງ ແລະເປັນ array
           throw new Error(
             "Invalid data format: 'cadastre_buildings_in_vientiane_bbox' array not found."
-          );
+          ); // ຖິ້ມ error ຖ້າ format ບໍ່ຖືກຕ້ອງ
         }
 
-        const geoJsonFormat = new GeoJSON();
+        const geoJsonFormat = new GeoJSON(); // ສ້າງ GeoJSON formatter
         const features = geoJsonFormat.readFeatures(
+          // ອ່ານ features ຈາກຂໍ້ມູນ GeoJSON
           {
             type: "FeatureCollection",
             features: featureArray.map((item) => ({
               type: "Feature",
-              geometry: item.wkb_geometry,
-              properties: { ...item, wkb_geometry: undefined },
+              geometry: item.wkb_geometry, // ໃຊ້ key geometry ທີ່ຖືກຕ້ອງ
+              properties: { ...item, wkb_geometry: undefined }, // ສ້າງ properties, ຍົກເວັ້ນ wkb_geometry
             })),
           },
-          { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" }
+          { dataProjection: "EPSG:4326", featureProjection: "EPSG:3857" } // ກໍານົດ projection ຂອງຂໍ້ມູນຕົ້ນສະບັບ ແລະ projection ທີ່ຕ້ອງການ
         );
 
         // --- FIX: Set a unique ID for each feature ---
         features.forEach((feature, index) => {
-          const osmId = feature.get("osm_id");
+          // loop ຜ່ານແຕ່ລະ feature
+          const osmId = feature.get("osm_id"); // ດຶງ osm_id
           // Use a prefix and index to guarantee a unique ID
-          feature.setId(`building-${osmId}-${index}`);
+          feature.setId(`building-${osmId}-${index}`); // ຕັ້ງ ID ທີ່ເປັນເອກະລັກໃຫ້ແຕ່ລະ feature
         });
 
         console.log(
           `[BuildingLayer] Parsed and set IDs for ${features.length} building features.`
-        );
+        ); // ສະແດງ log ຈຳນວນ features ທີ່ຖືກ parse
 
-        sourceRef.current.clear();
-        sourceRef.current.addFeatures(features);
-        onErrorChange(null);
+        sourceRef.current.clear(); // ລ້າງ source ເກົ່າ
+        sourceRef.current.addFeatures(features); // ເພີ່ມ features ໃໝ່ເຂົ້າໄປໃນ source
+        onErrorChange(null); // ລ້າງ error
       } catch (error) {
-        console.error(`[BuildingLayer] Error loading building data:`, error);
-        let errorMessage = `Failed to load building data: ${error.message}`;
-        if (error.name === "AbortError") errorMessage = "Request timed out.";
+        // ຈັດການກັບ error
+        console.error(`[BuildingLayer] Error loading building data:`, error); // ສະແດງ error ໃນ console
+        let errorMessage = `Failed to load building data: ${error.message}`; // ສ້າງຂໍ້ຄວາມ error
+        if (error.name === "AbortError") errorMessage = "Request timed out."; // ຖ້າ error ເປັນ AbortError, ແປວ່າ timeout
 
         if (attempt < MAX_RETRIES) {
-          const delay = BASE_RETRY_DELAY * Math.pow(2, attempt);
-          onErrorChange(`${errorMessage} Retrying...`);
+          // ຖ້າຍັງບໍ່ເກີນຈຳນວນຄັ້ງທີ່ລອງສູງສຸດ
+          const delay = BASE_RETRY_DELAY * Math.pow(2, attempt); // ຄິດໄລ່ delay ແບບ exponential backoff
+          onErrorChange(`${errorMessage} Retrying...`); // ແຈ້ງເຕືອນວ່າກຳລັງ retry
           retryTimeoutIdRef.current = setTimeout(
             () => fetchData(attempt + 1),
             delay
-          );
+          ); // ຕັ້ງ setTimeout ເພື່ອລອງ fetch ໃໝ່
         } else {
-          onErrorChange(`Failed after ${MAX_RETRIES + 1} attempts.`);
+          onErrorChange(`Failed after ${MAX_RETRIES + 1} attempts.`); // ແຈ້ງເຕືອນວ່າລົ້ມເຫຼວຫຼັງຈາກລອງຫຼາຍຄັ້ງ
         }
       } finally {
-        onLoadingChange(false);
-        isFetchingRef.current = false;
+        onLoadingChange(false); // ແຈ້ງເຕືອນວ່າສິ້ນສຸດການໂຫຼດ
+        isFetchingRef.current = false; // ຕັ້ງຄ່າວ່າບໍ່ໄດ້ກຳລັງ fetch ແລ້ວ
       }
     },
     [onLoadingChange, onErrorChange]
-  );
+  ); // Dependencies ສຳລັບ useCallback
 
   useEffect(() => {
-    if (!map) return;
+    // useEffect ນີ້ຈະເຮັດວຽກເມື່ອ map, isVisible, fetchData, buildingStyle ປ່ຽນແປງ
+    if (!map) return; // ຖ້າບໍ່ມີ map, ບໍ່ຕ້ອງເຮັດຫຍັງ
     if (!layerRef.current) {
+      // ຖ້າ layer ຍັງບໍ່ໄດ້ຖືກສ້າງ
       layerRef.current = new VectorLayer({
-        source: sourceRef.current,
-        style: buildingStyle,
-        properties: { name: "building_layer" },
-        zIndex: 4,
+        // ສ້າງ VectorLayer ໃໝ່
+        source: sourceRef.current, // ໃຊ້ source ທີ່ສ້າງໄວ້
+        style: buildingStyle, // ໃຊ້ style ທີ່ກຳນົດໄວ້
+        properties: { name: "building_layer" }, // ກຳນົດ properties ຂອງ layer
+        zIndex: 4, // ກຳນົດ zIndex ເພື່ອຄວບຄຸມລຳດັບການສະແດງຜົນ
       });
-      map.addLayer(layerRef.current);
+      map.addLayer(layerRef.current); // ເພີ່ມ layer ເຂົ້າໄປໃນແຜນທີ່
     }
-    layerRef.current.setVisible(isVisible);
+    layerRef.current.setVisible(isVisible); // ຕັ້ງຄ່າການເບິ່ງເຫັນຂອງ layer
     if (isVisible && sourceRef.current.getFeatures().length === 0) {
-      fetchData();
+      // ຖ້າ layer ເຫັນໄດ້ ແລະຍັງບໍ່ມີ features
+      fetchData(); // ເລີ່ມຕົ້ນ fetch ຂໍ້ມູນ
     }
   }, [map, isVisible, fetchData, buildingStyle]);
 
   useEffect(() => {
+    // useEffect ນີ້ຈະເຮັດວຽກເມື່ອ isVisible ປ່ຽນແປງ
     if (layerRef.current) {
-      layerRef.current.setVisible(isVisible);
+      // ຖ້າມີ layer
+      layerRef.current.setVisible(isVisible); // ຕັ້ງຄ່າການເບິ່ງເຫັນຂອງ layer
     }
   }, [isVisible]);
 
   // 3. useEffect ສໍາລັບການປັບ Opacity
   useEffect(() => {
+    // useEffect ນີ້ຈະເຮັດວຽກເມື່ອ opacity ປ່ຽນແປງ
     if (layerRef.current) {
-      layerRef.current.setOpacity(opacity);
+      // ຖ້າມີ layer
+      layerRef.current.setOpacity(opacity); // ຕັ້ງຄ່າຄວາມໂປ່ງໃສຂອງ layer
     }
   }, [opacity]);
 
-  return null;
+  return null; // component ນີ້ບໍ່ໄດ້ render ອົງປະກອບ UI ໃດໆ
 };
 
-export default BuildingLayer;
+export default BuildingLayer; // export BuildingLayer component

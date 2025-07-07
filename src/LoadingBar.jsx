@@ -1,6 +1,11 @@
+// LoadingBar.jsx
 import React from "react";
 import LinearProgress from "@mui/material/LinearProgress";
 
+/**
+ * ຄອມໂປເນັ້ນແຖບໂຫຼດຂໍ້ມູນ
+ * Loading bar component that shows progress of data loading
+ */
 const LoadingBar = ({ isLoading, loadingProgress, loadedFeaturesCount }) => {
   if (!isLoading) return null;
 

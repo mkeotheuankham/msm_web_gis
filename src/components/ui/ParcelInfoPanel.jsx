@@ -1,22 +1,27 @@
-import React from "react";
-import { X } from "lucide-react";
+import React from "react"; // import React
+import { X } from "lucide-react"; // import X icon ຈາກ lucide-react (ສຳລັບປຸ່ມປິດ)
 
 const ParcelInfoPanel = ({ parcel, onClose }) => {
-  if (!parcel) return null;
+  // ຮັບ object ຂໍ້ມູນ parcel ແລະ onClose function ຈາກ props
+  if (!parcel) return null; // ຖ້າບໍ່ມີຂໍ້ມູນ parcel, ບໍ່ render ອົງປະກອບໃດໆ
 
   return (
+    // ສ່ວນ UI ຂອງ panel ສະແດງຂໍ້ມູນດິນແຫ່ງ
     <div className="parcel-info-panel">
       <div className="parcel-info-header">
-        <h3>ຂໍ້ມູນດິນແຫ່ງ</h3>
+        <h3>ຂໍ້ມູນດິນແຫ່ງ</h3> {/* ຫົວຂໍ້ຂອງ panel */}
         <button onClick={onClose} className="close-button">
-          <X size={18} />
+          {/* ປຸ່ມສຳລັບປິດ panel */}
+          <X size={18} /> {/* icon X */}
         </button>
       </div>
 
       <div className="parcel-info-content">
+        {/* ສ່ວນສະແດງເນື້ອໃນຂໍ້ມູນ */}
         <div className="info-row">
-          <span className="info-label">ເລກທີດິນ:</span>
-          <span className="info-value">{parcel.parcelno.trim()}</span>
+          <span className="info-label">ເລກທີດິນ:</span> {/* ປ້າຍກຳກັບ */}
+          <span className="info-value">{parcel.parcelno.trim()}</span>{" "}
+          {/* ຄ່າຂອງເລກທີດິນ, trim() ເພື່ອລຶບຊ່ອງວ່າງ */}
         </div>
         <div className="info-row">
           <span className="info-label">ເລກທີໃບສິດ:</span>
@@ -32,7 +37,8 @@ const ParcelInfoPanel = ({ parcel, onClose }) => {
         </div>
         <div className="info-row">
           <span className="info-label">ພື້ນທີ່:</span>
-          <span className="info-value">{parcel.area} ຕລ.ມ.</span>
+          <span className="info-value">{parcel.area} ຕລ.ມ.</span>{" "}
+          {/* ສະແດງພື້ນທີ່ເປັນຕາແມັດ */}
         </div>
         <div className="info-row">
           <span className="info-label">ປະເພດການນຳໃຊ້ທີ່ດິນ:</span>
@@ -44,7 +50,8 @@ const ParcelInfoPanel = ({ parcel, onClose }) => {
         </div>
         <div className="info-row">
           <span className="info-label">ຈຳນວນເຈົ້າຂອງ:</span>
-          <span className="info-value">{parcel.owner_count} ຄົນ</span>
+          <span className="info-value">{parcel.owner_count} ຄົນ</span>{" "}
+          {/* ສະແດງຈຳນວນເຈົ້າຂອງ */}
         </div>
         <div className="info-row">
           <span className="info-label">ວັນທີອອກໃບສິດ:</span>
@@ -59,4 +66,4 @@ const ParcelInfoPanel = ({ parcel, onClose }) => {
   );
 };
 
-export default ParcelInfoPanel;
+export default ParcelInfoPanel; // export component

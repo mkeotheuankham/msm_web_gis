@@ -1,3 +1,4 @@
+// App.jsx
 import React, { useState, useMemo, useCallback } from "react";
 import "ol/ol.css";
 import "./index.css";
@@ -16,17 +17,22 @@ import BaseMapSwitcher from "./components/map/BaseMapSwitcher";
 import LayerToggles from "./components/ui/LayerToggles";
 import RoadLayer from "./components/map/RoadLayer";
 import BuildingLayer from "./components/map/BuildingLayer";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // Import Data
 import initialLaoDistricts from "./data/LaoDistrictsData";
 
+/**
+ * ຄອມໂປເນັ້ນຫຼັກຂອງແອັບພລິເຄຊັ່ນ
+ * Main application component
+ */
 function App() {
-  // Map State
+  // Map State - ສະຖານະການໃຊ້ງານແຜນທີ່
   const [viewInstance, setViewInstance] = useState(null);
   const [openLayersLoaded, setOpenLayersLoaded] = useState(false);
   const [selectedBaseMap, setSelectedBaseMap] = useState("OSM");
 
-  // Data & Layer State
+  // Data & Layer State - ສະຖານະຂໍ້ມູນແລະ Layer
   const [districts, setDistricts] = useState(initialLaoDistricts);
   const [selectedProvinceForDistricts, setSelectedProvinceForDistricts] =
     useState("VientianeCapital");
@@ -37,22 +43,22 @@ function App() {
     building: { isVisible: true, opacity: 1, isLoading: false, error: null },
   });
 
-  // Interaction State
+  // Interaction State - ສະຖານະການໂຕ້ຕອບ
   const [interactionMode, setInteractionMode] = useState("None");
   const [isSnapActive, setIsSnapActive] = useState(false);
 
-  // UI State
+  // UI State - ສະຖານະ UI
   const [isProvincesExpanded, setProvincesExpanded] = useState(true);
   const [isDistrictsExpanded, setDistrictsExpanded] = useState(true);
   const [isLayersExpanded, setLayersExpanded] = useState(true);
 
-  // Memoized callback object for MapComponent
+  // Memoized callback object for MapComponent - ວັດຖຸທີ່ຈື່ຈຳສຳລັບ MapComponent
   const onMapLoaded = useMemo(
     () => ({ setViewInstance, setOpenLayersLoaded }),
     []
   );
 
-  // Derived State for Loading Bar
+  // Derived State for Loading Bar - ສະຖານະທີ່ຄຳນວນມາສຳລັບ Loading Bar
   const overallLoading = useMemo(
     () => districts.some((d) => d.checked && d.loading),
     [districts]
@@ -70,7 +76,7 @@ function App() {
     return (loadedCount / checkedDistricts.length) * 100;
   }, [districts]);
 
-  // Handlers
+  // Handlers - ຕົວຈັດການຕ່າງໆ
   const handleProvinceSelectionForMap = useCallback(
     (coords, zoom, provinceName) => {
       if (viewInstance) {
@@ -119,6 +125,8 @@ function App() {
       [layerName]: { ...prev[layerName], opacity },
     }));
   };
+
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="app-container">
@@ -172,29 +180,47 @@ function App() {
           )}
         </MapComponent>
 
-        <div className="sidebar">
-          <LayerToggles
-            layerStates={layerStates}
-            onVisibilityChange={handleLayerVisibilityChange}
-            onOpacityChange={handleLayerOpacityChange}
-            isExpanded={isLayersExpanded}
-            onToggleExpansion={() => setLayersExpanded((e) => !e)}
-          />
-          <ProvinceControls
-            openLayersLoaded={openLayersLoaded}
-            onProvinceSelectForMap={handleProvinceSelectionForMap}
-            isExpanded={isProvincesExpanded}
-            onToggleExpansion={() => setProvincesExpanded((e) => !e)}
-          />
-          <DistrictSelector
-            districts={districts}
-            onToggle={toggleDistrict}
-            onLoadData={handleLoadData}
-            onOpacityChange={handleDistrictOpacityChange}
-            selectedProvinceForDistricts={selectedProvinceForDistricts}
-            isExpanded={isDistrictsExpanded}
-            onToggleExpansion={() => setDistrictsExpanded((e) => !e)}
-          />
+        <div className={`sidebar ${isSidebarCollapsed ? "collapsed" : ""}`}>
+          <button
+            className="sidebar-toggle"
+            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronLeft size={20} />
+            ) : (
+              <ChevronRight size={20} />
+            )}
+          </button>
+
+          <div className="sidebar-section">
+            <div className="sidebar-section-header">🗺 Map Layers</div>
+            <LayerToggles
+              layerStates={layerStates}
+              onVisibilityChange={handleLayerVisibilityChange}
+              onOpacityChange={handleLayerOpacityChange}
+              isExpanded={isLayersExpanded}
+              onToggleExpansion={() => setLayersExpanded((e) => !e)}
+            />
+          </div>
+          <div className="sidebar-section">
+            <ProvinceControls
+              openLayersLoaded={openLayersLoaded}
+              onProvinceSelectForMap={handleProvinceSelectionForMap}
+              isExpanded={isProvincesExpanded}
+              onToggleExpansion={() => setProvincesExpanded((e) => !e)}
+            />
+          </div>
+          <div className="sidebar-section">
+            <DistrictSelector
+              districts={districts}
+              onToggle={toggleDistrict}
+              onLoadData={handleLoadData}
+              onOpacityChange={handleDistrictOpacityChange}
+              selectedProvinceForDistricts={selectedProvinceForDistricts}
+              isExpanded={isDistrictsExpanded}
+              onToggleExpansion={() => setDistrictsExpanded((e) => !e)}
+            />
+          </div>
         </div>
 
         {selectedParcel && (
